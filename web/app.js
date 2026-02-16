@@ -3,7 +3,7 @@ const STORAGE_KEY = "werkuren_state_v1";
 const AUTH_KEY = "werkuren_auth_v1";
 const AUTH_TOKEN_KEY = "werkuren_auth_token_v1";
 const API_BASE = "/api";
-const USE_API = false; // zet op true voor live versie met Supabase + Vercel
+const USE_API = true; // zet op true voor live versie met Supabase + Vercel
 
 const DAYS_NL = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 const MONTHS_NL = [
