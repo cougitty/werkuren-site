@@ -38,6 +38,7 @@ const state = {
   currentMonth: new Date().getMonth(),
   overviewMode: "week",
   currentWeek: getWeekNumber(new Date()),
+  overviewClientId: "",
   settings: { hourlyRate: 40, currency: "€" },
   entries: [],
   clients: [],
@@ -63,6 +64,8 @@ const els = {
   periodLabel: document.getElementById("periodLabel"),
   prevPeriodBtn: document.getElementById("prevPeriodBtn"),
   nextPeriodBtn: document.getElementById("nextPeriodBtn"),
+  overviewYear: document.getElementById("overviewYear"),
+  overviewClient: document.getElementById("overviewClient"),
   statWorked: document.getElementById("statWorked"),
   statEarnings: document.getElementById("statEarnings"),
   statDays: document.getElementById("statDays"),
@@ -141,6 +144,7 @@ function persistState() {
       currentMonth: state.currentMonth,
       overviewMode: state.overviewMode,
       currentWeek: state.currentWeek,
+      overviewClientId: state.overviewClientId,
       settings: state.settings,
       entries: state.entries,
       clients: state.clients,
@@ -164,6 +168,23 @@ function attachEvents() {
   els.toggleMonth.addEventListener("click", () => setOverviewMode("month"));
   els.prevPeriodBtn.addEventListener("click", () => shiftPeriod(-1));
   els.nextPeriodBtn.addEventListener("click", () => shiftPeriod(1));
+  if (els.overviewYear) {
+    els.overviewYear.addEventListener("change", (event) => {
+      const year = Number(event.target.value);
+      if (!Number.isNaN(year)) {
+        state.currentYear = year;
+        renderOverview();
+        persistState();
+      }
+    });
+  }
+  if (els.overviewClient) {
+    els.overviewClient.addEventListener("change", (event) => {
+      state.overviewClientId = event.target.value || "";
+      renderOverview();
+      persistState();
+    });
+  }
 
   els.exportPeriodBtn.addEventListener("click", () => exportPeriod());
   els.exportSelectBtn.addEventListener("click", () => openExportModal());
@@ -329,8 +350,7 @@ function renderEntries() {
 }
 
 function renderOverview() {
-  const { entries } = state;
-  const filtered = filterEntriesByPeriod(entries);
+  const filtered = getFilteredEntries();
 
   const totalMinutes = filtered.reduce((sum, e) => sum + calculateWorkedMinutes(e), 0);
   const totalBreak = filtered.reduce((sum, e) => sum + e.breakMinutes, 0);
@@ -369,6 +389,7 @@ function renderOverview() {
 
   els.toggleWeek.classList.toggle("active", state.overviewMode === "week");
   els.toggleMonth.classList.toggle("active", state.overviewMode === "month");
+  renderOverviewFilters();
 }
 
 function renderSettings() {
@@ -405,7 +426,6 @@ function openEntryModal(entryId = null) {
   els.entryNotes.value = entry ? entry.notes : "";
   state.breakMinutes = entry ? entry.breakMinutes : 30;
 
-  populateTimeOptions();
   populateClients(entry?.clientId || "");
   els.entryStart.value = entry ? entry.startTime : "09:00";
   els.entryEnd.value = entry ? entry.endTime : "17:00";
@@ -413,19 +433,6 @@ function openEntryModal(entryId = null) {
   renderBreakChips();
   els.deleteEntryBtn.style.display = entry ? "inline-flex" : "none";
   toggleModal(els.entryModal, true);
-}
-
-function populateTimeOptions() {
-  const times = getQuarterTimes();
-  [els.entryStart, els.entryEnd].forEach((select) => {
-    select.innerHTML = "";
-    times.forEach((t) => {
-      const option = document.createElement("option");
-      option.value = t;
-      option.textContent = t;
-      select.appendChild(option);
-    });
-  });
 }
 
 function populateClients(selectedId) {
@@ -472,6 +479,10 @@ async function saveEntry() {
   }
   if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
     alert("De eindtijd moet na de starttijd liggen.");
+    return;
+  }
+  if (!isQuarterTime(startTime) || !isQuarterTime(endTime)) {
+    alert("Kies tijden op kwartieren (00, 15, 30, 45).");
     return;
   }
 
@@ -670,7 +681,7 @@ function shiftPeriod(delta) {
 }
 
 function exportPeriod() {
-  const entries = filterEntriesByPeriod(state.entries);
+  const entries = getFilteredEntries();
   if (entries.length === 0) {
     alert("Geen uren om te exporteren voor deze periode.");
     return;
@@ -688,7 +699,8 @@ function openExportModal() {
 }
 
 function renderExportList() {
-  const dates = [...new Set(state.entries.map((e) => e.date))].sort((a, b) => b.localeCompare(a));
+  const filtered = getFilteredEntries();
+  const dates = [...new Set(filtered.map((e) => e.date))].sort((a, b) => b.localeCompare(a));
   const selected = new Set(dates);
   els.exportList.innerHTML = "";
 
@@ -715,7 +727,7 @@ function renderExportList() {
       .map((row) => row.dataset.date);
     selected.clear();
     pickedDates.forEach((d) => selected.add(d));
-    const entries = state.entries.filter((e) => selected.has(e.date));
+    const entries = filtered.filter((e) => selected.has(e.date));
     const totalMinutes = entries.reduce((sum, e) => sum + calculateWorkedMinutes(e), 0);
     const totalHours = minutesToDecimalHours(totalMinutes);
     const totalEarnings = totalHours * state.settings.hourlyRate;
@@ -728,7 +740,7 @@ function renderExportList() {
 
 function exportSelected() {
   const selected = new Set(JSON.parse(els.exportSelectedBtn.dataset.selected || "[]"));
-  const entries = state.entries.filter((e) => selected.has(e.date));
+  const entries = getFilteredEntries().filter((e) => selected.has(e.date));
   if (entries.length === 0) {
     alert("Selecteer minimaal 1 dag.");
     return;
@@ -788,6 +800,41 @@ function filterEntriesByPeriod(entries) {
     const d = new Date(e.date + "T00:00:00");
     return d >= start && d <= end;
   });
+}
+
+function getFilteredEntries() {
+  const base = filterEntriesByPeriod(state.entries);
+  if (!state.overviewClientId) return base;
+  return base.filter((e) => e.clientId === state.overviewClientId);
+}
+
+function renderOverviewFilters() {
+  if (!els.overviewYear || !els.overviewClient) return;
+  const years = new Set(state.entries.map((e) => Number(e.date.slice(0, 4))));
+  years.add(state.currentYear);
+  const sortedYears = [...years].sort((a, b) => b - a);
+
+  els.overviewYear.innerHTML = "";
+  sortedYears.forEach((year) => {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = String(year);
+    els.overviewYear.appendChild(option);
+  });
+  els.overviewYear.value = String(state.currentYear);
+
+  els.overviewClient.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "Alle klanten";
+  els.overviewClient.appendChild(allOption);
+  state.clients.forEach((client) => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.companyName;
+    els.overviewClient.appendChild(option);
+  });
+  els.overviewClient.value = state.overviewClientId || "";
 }
 
 function getDailyBreakdown(entries) {
@@ -1020,6 +1067,11 @@ function getQuarterTimes() {
 function timeToMinutes(time) {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
+}
+
+function isQuarterTime(time) {
+  const mins = timeToMinutes(time);
+  return mins % 15 === 0;
 }
 
 function calculateWorkedMinutes(entry) {

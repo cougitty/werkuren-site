@@ -22,6 +22,12 @@
         </div>
       </header>
 
+      <nav class="tabbar top-tabs">
+        <button class="tab active" data-view="calendar">Kalender</button>
+        <button class="tab" data-view="overview">Overzicht</button>
+        <button class="tab" data-view="settings">Instellingen</button>
+      </nav>
+
       <main class="screen">
         <section id="view-calendar" class="view active">
           <div class="view-header">
@@ -54,6 +60,11 @@
           <div class="toggle" role="tablist">
             <button id="toggleWeek" class="toggle-btn active" data-mode="week">Week</button>
             <button id="toggleMonth" class="toggle-btn" data-mode="month">Maand</button>
+          </div>
+
+          <div class="filters">
+            <select id="overviewYear"></select>
+            <select id="overviewClient"></select>
           </div>
 
           <div class="period">
@@ -137,7 +148,7 @@
         </section>
       </main>
 
-      <nav class="tabbar">
+      <nav class="tabbar bottom-tabs">
         <button class="tab active" data-view="calendar">Kalender</button>
         <button class="tab" data-view="overview">Overzicht</button>
         <button class="tab" data-view="settings">Instellingen</button>
@@ -168,10 +179,10 @@
           <select id="entryClient"></select>
 
           <label>Starttijd</label>
-          <select id="entryStart"></select>
+          <input id="entryStart" type="time" step="900" />
 
           <label>Eindtijd</label>
-          <select id="entryEnd"></select>
+          <input id="entryEnd" type="time" step="900" />
 
           <label>Pauze</label>
           <div class="chip-row" id="breakChips"></div>
