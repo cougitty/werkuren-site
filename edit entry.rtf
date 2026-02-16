@@ -1,0 +1,437 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import React, \{ useState, useMemo, useEffect \} from "react";\
+import \{\
+  StyleSheet,\
+  Text,\
+  View,\
+  Pressable,\
+  ScrollView,\
+  TextInput,\
+  useColorScheme,\
+  Alert,\
+\} from "react-native";\
+import \{ Ionicons \} from "@expo/vector-icons";\
+import \{ router, useLocalSearchParams \} from "expo-router";\
+import * as Haptics from "expo-haptics";\
+import \{ useWork \} from "@/lib/WorkContext";\
+import \{ useThemeColors \} from "@/constants/colors";\
+import \{\
+  getQuarterTimes,\
+  timeToMinutes,\
+  calculateWorkedMinutes,\
+  minutesToDecimalHours,\
+  formatDecimalHours,\
+\} from "@/lib/storage";\
+\
+const QUARTER_TIMES = getQuarterTimes();\
+const BREAK_OPTIONS = [0, 15, 30, 45, 60, 75, 90];\
+\
+export default function EditEntryScreen() \{\
+  const \{ id \} = useLocalSearchParams<\{ id: string \}>();\
+  const colorScheme = useColorScheme();\
+  const colors = useThemeColors(colorScheme);\
+  const \{ entries, editEntry, removeEntry, settings, clients \} = useWork();\
+\
+  const entry = entries.find((e) => e.id === id);\
+\
+  const [startTime, setStartTime] = useState(entry?.startTime || "09:00");\
+  const [endTime, setEndTime] = useState(entry?.endTime || "17:00");\
+  const [breakMinutes, setBreakMinutes] = useState(entry?.breakMinutes || 30);\
+  const [notes, setNotes] = useState(entry?.notes || "");\
+  const [clientId, setClientId] = useState(entry?.clientId || "");\
+  const [showStartPicker, setShowStartPicker] = useState(false);\
+  const [showEndPicker, setShowEndPicker] = useState(false);\
+  const [showClientPicker, setShowClientPicker] = useState(false);\
+\
+  const selectedClient = clients.find((c) => c.id === clientId);\
+\
+  useEffect(() => \{\
+    if (entry) \{\
+      setStartTime(entry.startTime);\
+      setEndTime(entry.endTime);\
+      setBreakMinutes(entry.breakMinutes);\
+      setNotes(entry.notes);\
+      setClientId(entry.clientId || "");\
+    \}\
+  \}, [entry?.id]);\
+\
+  const preview = useMemo(() => \{\
+    const mockEntry = \{ id: "", date: entry?.date || "", startTime, endTime, breakMinutes, notes, clientId \};\
+    const worked = calculateWorkedMinutes(mockEntry);\
+    const hours = minutesToDecimalHours(worked);\
+    return \{ hours, earnings: hours * settings.hourlyRate, formatted: formatDecimalHours(hours) \};\
+  \}, [startTime, endTime, breakMinutes, settings.hourlyRate, entry?.date, clientId]);\
+\
+  const handleSave = async () => \{\
+    if (!entry) return;\
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) \{\
+      Alert.alert("Ongeldige tijden", "De eindtijd moet na de starttijd liggen.");\
+      return;\
+    \}\
+    await editEntry(\{ ...entry, startTime, endTime, breakMinutes, notes, clientId \});\
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);\
+    router.back();\
+  \};\
+\
+  const handleDelete = () => \{\
+    Alert.alert("Verwijderen", "Weet je zeker dat je deze registratie wilt verwijderen?", [\
+      \{ text: "Annuleren", style: "cancel" \},\
+      \{\
+        text: "Verwijderen",\
+        style: "destructive",\
+        onPress: async () => \{\
+          if (!entry) return;\
+          await removeEntry(entry.id);\
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);\
+          router.back();\
+        \},\
+      \},\
+    ]);\
+  \};\
+\
+  if (!entry) \{\
+    return (\
+      <View style=\{[styles.container, \{ backgroundColor: colors.background, justifyContent: "center", alignItems: "center" \}]\}>\
+        <Text style=\{\{ color: colors.textSecondary, fontFamily: "Inter_400Regular" \}\}>\
+          Registratie niet gevonden\
+        </Text>\
+      </View>\
+    );\
+  \}\
+\
+  const TimePickerList = (\{\
+    selected,\
+    onSelect,\
+  \}: \{\
+    selected: string;\
+    onSelect: (t: string) => void;\
+  \}) => (\
+    <ScrollView\
+      style=\{[styles.timePicker, \{ backgroundColor: colors.surfaceSecondary \}]\}\
+      showsVerticalScrollIndicator=\{false\}\
+    >\
+      \{QUARTER_TIMES.map((t) => (\
+        <Pressable\
+          key=\{t\}\
+          style=\{[\
+            styles.timeOption,\
+            t === selected && \{ backgroundColor: colors.tint \},\
+          ]\}\
+          onPress=\{() => \{\
+            onSelect(t);\
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);\
+          \}\}\
+        >\
+          <Text\
+            style=\{[\
+              styles.timeOptionText,\
+              \{ color: t === selected ? "#FFFFFF" : colors.text \},\
+            ]\}\
+          >\
+            \{t\}\
+          </Text>\
+        </Pressable>\
+      ))\}\
+    </ScrollView>\
+  );\
+\
+  return (\
+    <ScrollView\
+      style=\{[styles.container, \{ backgroundColor: colors.background \}]\}\
+      contentContainerStyle=\{styles.content\}\
+      showsVerticalScrollIndicator=\{false\}\
+      keyboardShouldPersistTaps="handled"\
+    >\
+      <View style=\{styles.headerRow\}>\
+        <View>\
+          <Text style=\{[styles.title, \{ color: colors.text \}]\}>Bewerken</Text>\
+          <Text style=\{[styles.dateLabel, \{ color: colors.textSecondary \}]\}>\{entry.date\}</Text>\
+        </View>\
+        <Pressable onPress=\{handleDelete\} hitSlop=\{12\}>\
+          <Ionicons name="trash-outline" size=\{24\} color=\{colors.danger\} />\
+        </Pressable>\
+      </View>\
+\
+      <View style=\{[styles.previewCard, \{ backgroundColor: colors.tintLight \}]\}>\
+        <View style=\{styles.previewRow\}>\
+          <Text style=\{[styles.previewLabel, \{ color: colors.tint \}]\}>Gewerkt</Text>\
+          <Text style=\{[styles.previewValue, \{ color: colors.tint \}]\}>\{preview.formatted\}</Text>\
+        </View>\
+        <View style=\{styles.previewRow\}>\
+          <Text style=\{[styles.previewLabel, \{ color: colors.tint \}]\}>Verdiensten</Text>\
+          <Text style=\{[styles.previewValue, \{ color: colors.tint \}]\}>\
+            \{settings.currency\}\{preview.earnings.toFixed(2)\}\
+          </Text>\
+        </View>\
+      </View>\
+\
+      <Text style=\{[styles.label, \{ color: colors.text \}]\}>Klant</Text>\
+      <Pressable\
+        style=\{[styles.timeButton, \{ backgroundColor: colors.surface, borderColor: colors.border \}]\}\
+        onPress=\{() => \{ setShowClientPicker(!showClientPicker); setShowStartPicker(false); setShowEndPicker(false); \}\}\
+      >\
+        <Ionicons name="business-outline" size=\{20\} color=\{colors.tint\} />\
+        <Text style=\{[styles.timeButtonText, \{ color: selectedClient ? colors.text : colors.textSecondary \}]\}>\
+          \{selectedClient ? selectedClient.companyName : "Selecteer klant (optioneel)"\}\
+        </Text>\
+        <Ionicons\
+          name=\{showClientPicker ? "chevron-up" : "chevron-down"\}\
+          size=\{18\}\
+          color=\{colors.textSecondary\}\
+        />\
+      </Pressable>\
+      \{showClientPicker && (\
+        <ScrollView\
+          style=\{[styles.timePicker, \{ backgroundColor: colors.surfaceSecondary \}]\}\
+          showsVerticalScrollIndicator=\{false\}\
+        >\
+          <Pressable\
+            style=\{[styles.timeOption, !clientId && \{ backgroundColor: colors.tint \}]\}\
+            onPress=\{() => \{ setClientId(""); setShowClientPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); \}\}\
+          >\
+            <Text style=\{[styles.timeOptionText, \{ color: !clientId ? "#FFFFFF" : colors.textSecondary, fontStyle: "italic" as const \}]\}>\
+              Geen klant\
+            </Text>\
+          </Pressable>\
+          \{clients.map((c) => (\
+            <Pressable\
+              key=\{c.id\}\
+              style=\{[styles.timeOption, clientId === c.id && \{ backgroundColor: colors.tint \}]\}\
+              onPress=\{() => \{ setClientId(c.id); setShowClientPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); \}\}\
+            >\
+              <Text style=\{[styles.timeOptionText, \{ color: clientId === c.id ? "#FFFFFF" : colors.text \}]\}>\
+                \{c.companyName\}\
+              </Text>\
+            </Pressable>\
+          ))\}\
+        </ScrollView>\
+      )\}\
+\
+      <Text style=\{[styles.label, \{ color: colors.text \}]\}>Starttijd</Text>\
+      <Pressable\
+        style=\{[styles.timeButton, \{ backgroundColor: colors.surface, borderColor: colors.border \}]\}\
+        onPress=\{() => \{ setShowStartPicker(!showStartPicker); setShowEndPicker(false); setShowClientPicker(false); \}\}\
+      >\
+        <Ionicons name="time-outline" size=\{20\} color=\{colors.tint\} />\
+        <Text style=\{[styles.timeButtonText, \{ color: colors.text \}]\}>\{startTime\}</Text>\
+        <Ionicons\
+          name=\{showStartPicker ? "chevron-up" : "chevron-down"\}\
+          size=\{18\}\
+          color=\{colors.textSecondary\}\
+        />\
+      </Pressable>\
+      \{showStartPicker && <TimePickerList selected=\{startTime\} onSelect=\{(t) => \{ setStartTime(t); setShowStartPicker(false); \}\} />\}\
+\
+      <Text style=\{[styles.label, \{ color: colors.text \}]\}>Eindtijd</Text>\
+      <Pressable\
+        style=\{[styles.timeButton, \{ backgroundColor: colors.surface, borderColor: colors.border \}]\}\
+        onPress=\{() => \{ setShowEndPicker(!showEndPicker); setShowStartPicker(false); setShowClientPicker(false); \}\}\
+      >\
+        <Ionicons name="time-outline" size=\{20\} color=\{colors.tint\} />\
+        <Text style=\{[styles.timeButtonText, \{ color: colors.text \}]\}>\{endTime\}</Text>\
+        <Ionicons\
+          name=\{showEndPicker ? "chevron-up" : "chevron-down"\}\
+          size=\{18\}\
+          color=\{colors.textSecondary\}\
+        />\
+      </Pressable>\
+      \{showEndPicker && <TimePickerList selected=\{endTime\} onSelect=\{(t) => \{ setEndTime(t); setShowEndPicker(false); \}\} />\}\
+\
+      <Text style=\{[styles.label, \{ color: colors.text \}]\}>Pauze</Text>\
+      <View style=\{styles.breakRow\}>\
+        \{BREAK_OPTIONS.map((b) => (\
+          <Pressable\
+            key=\{b\}\
+            style=\{[\
+              styles.breakOption,\
+              \{\
+                backgroundColor: breakMinutes === b ? colors.tint : colors.surface,\
+                borderColor: breakMinutes === b ? colors.tint : colors.border,\
+              \},\
+            ]\}\
+            onPress=\{() => \{ setBreakMinutes(b); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); \}\}\
+          >\
+            <Text\
+              style=\{[\
+                styles.breakOptionText,\
+                \{ color: breakMinutes === b ? "#FFFFFF" : colors.text \},\
+              ]\}\
+            >\
+              \{b\}m\
+            </Text>\
+          </Pressable>\
+        ))\}\
+      </View>\
+\
+      <Text style=\{[styles.label, \{ color: colors.text \}]\}>Notities (optioneel)</Text>\
+      <TextInput\
+        style=\{[\
+          styles.notesInput,\
+          \{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.text \},\
+        ]\}\
+        value=\{notes\}\
+        onChangeText=\{setNotes\}\
+        placeholder="Bijv. projectnaam..."\
+        placeholderTextColor=\{colors.textSecondary\}\
+        multiline\
+      />\
+\
+      <View style=\{styles.buttonRow\}>\
+        <Pressable\
+          style=\{(\{ pressed \}) => [\
+            styles.cancelButton,\
+            \{ borderColor: colors.border, opacity: pressed ? 0.7 : 1 \},\
+          ]\}\
+          onPress=\{() => router.back()\}\
+        >\
+          <Text style=\{[styles.cancelText, \{ color: colors.text \}]\}>Annuleren</Text>\
+        </Pressable>\
+        <Pressable\
+          style=\{(\{ pressed \}) => [\
+            styles.saveButton,\
+            \{ backgroundColor: colors.tint, opacity: pressed ? 0.85 : 1 \},\
+          ]\}\
+          onPress=\{handleSave\}\
+        >\
+          <Ionicons name="checkmark" size=\{20\} color="#FFFFFF" />\
+          <Text style=\{styles.saveText\}>Opslaan</Text>\
+        </Pressable>\
+      </View>\
+    </ScrollView>\
+  );\
+\}\
+\
+const styles = StyleSheet.create(\{\
+  container: \{ flex: 1 \},\
+  content: \{ padding: 20, paddingTop: 24 \},\
+  headerRow: \{\
+    flexDirection: "row",\
+    justifyContent: "space-between",\
+    alignItems: "flex-start",\
+    marginBottom: 16,\
+  \},\
+  title: \{\
+    fontSize: 24,\
+    fontFamily: "Inter_700Bold",\
+    marginBottom: 2,\
+  \},\
+  dateLabel: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_400Regular",\
+  \},\
+  previewCard: \{\
+    borderRadius: 14,\
+    padding: 14,\
+    gap: 6,\
+    marginBottom: 20,\
+  \},\
+  previewRow: \{\
+    flexDirection: "row",\
+    justifyContent: "space-between",\
+  \},\
+  previewLabel: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_500Medium",\
+  \},\
+  previewValue: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_700Bold",\
+  \},\
+  label: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_600SemiBold",\
+    marginBottom: 8,\
+    marginTop: 12,\
+  \},\
+  timeButton: \{\
+    flexDirection: "row",\
+    alignItems: "center",\
+    padding: 14,\
+    borderRadius: 12,\
+    borderWidth: 1,\
+    gap: 10,\
+  \},\
+  timeButtonText: \{\
+    flex: 1,\
+    fontSize: 16,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+  timePicker: \{\
+    maxHeight: 200,\
+    borderRadius: 12,\
+    marginTop: 4,\
+  \},\
+  timeOption: \{\
+    paddingVertical: 10,\
+    paddingHorizontal: 16,\
+    borderRadius: 8,\
+    marginHorizontal: 4,\
+    marginVertical: 1,\
+  \},\
+  timeOptionText: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_500Medium",\
+  \},\
+  breakRow: \{\
+    flexDirection: "row",\
+    flexWrap: "wrap",\
+    gap: 8,\
+  \},\
+  breakOption: \{\
+    paddingVertical: 10,\
+    paddingHorizontal: 14,\
+    borderRadius: 10,\
+    borderWidth: 1,\
+  \},\
+  breakOptionText: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+  notesInput: \{\
+    borderWidth: 1,\
+    borderRadius: 12,\
+    padding: 14,\
+    fontSize: 15,\
+    fontFamily: "Inter_400Regular",\
+    minHeight: 60,\
+    textAlignVertical: "top",\
+  \},\
+  buttonRow: \{\
+    flexDirection: "row",\
+    gap: 10,\
+    marginTop: 24,\
+    marginBottom: 40,\
+  \},\
+  cancelButton: \{\
+    flex: 1,\
+    paddingVertical: 16,\
+    borderRadius: 14,\
+    borderWidth: 1,\
+    alignItems: "center",\
+  \},\
+  cancelText: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+  saveButton: \{\
+    flex: 2,\
+    flexDirection: "row",\
+    paddingVertical: 16,\
+    borderRadius: 14,\
+    alignItems: "center",\
+    justifyContent: "center",\
+    gap: 6,\
+  \},\
+  saveText: \{\
+    color: "#FFFFFF",\
+    fontSize: 16,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+\});\
+}

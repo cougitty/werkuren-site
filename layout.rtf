@@ -1,0 +1,115 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import \{ isLiquidGlassAvailable \} from "expo-glass-effect";\
+import \{ Tabs \} from "expo-router";\
+import \{ NativeTabs, Icon, Label \} from "expo-router/unstable-native-tabs";\
+import \{ BlurView \} from "expo-blur";\
+import \{ Platform, StyleSheet, useColorScheme, View \} from "react-native";\
+import \{ Ionicons \} from "@expo/vector-icons";\
+import React from "react";\
+import Colors from "@/constants/colors";\
+\
+function NativeTabLayout() \{\
+  return (\
+    <NativeTabs>\
+      <NativeTabs.Trigger name="index">\
+        <Icon sf=\{\{ default: "calendar", selected: "calendar" \}\} />\
+        <Label>Kalender</Label>\
+      </NativeTabs.Trigger>\
+      <NativeTabs.Trigger name="overview">\
+        <Icon sf=\{\{ default: "chart.bar", selected: "chart.bar.fill" \}\} />\
+        <Label>Overzicht</Label>\
+      </NativeTabs.Trigger>\
+      <NativeTabs.Trigger name="settings">\
+        <Icon sf=\{\{ default: "gearshape", selected: "gearshape.fill" \}\} />\
+        <Label>Instellingen</Label>\
+      </NativeTabs.Trigger>\
+    </NativeTabs>\
+  );\
+\}\
+\
+function ClassicTabLayout() \{\
+  const colorScheme = useColorScheme();\
+  const isDark = colorScheme === "dark";\
+  const isWeb = Platform.OS === "web";\
+  const isIOS = Platform.OS === "ios";\
+  const colors = Colors[isDark ? "dark" : "light"];\
+\
+  return (\
+    <Tabs\
+      screenOptions=\{\{\
+        tabBarActiveTintColor: colors.tint,\
+        tabBarInactiveTintColor: colors.tabIconDefault,\
+        headerShown: false,\
+        tabBarStyle: \{\
+          position: "absolute" as const,\
+          backgroundColor: isIOS ? "transparent" : isDark ? colors.background : colors.surface,\
+          borderTopWidth: isWeb ? 1 : 0,\
+          borderTopColor: colors.border,\
+          elevation: 0,\
+          ...(isWeb ? \{ height: 84 \} : \{\}),\
+        \},\
+        tabBarBackground: () =>\
+          isIOS ? (\
+            <BlurView\
+              intensity=\{100\}\
+              tint=\{isDark ? "dark" : "light"\}\
+              style=\{StyleSheet.absoluteFill\}\
+            />\
+          ) : isWeb ? (\
+            <View\
+              style=\{[\
+                StyleSheet.absoluteFill,\
+                \{ backgroundColor: isDark ? colors.background : colors.surface \},\
+              ]\}\
+            />\
+          ) : null,\
+        tabBarLabelStyle: \{\
+          fontFamily: "Inter_500Medium",\
+          fontSize: 11,\
+        \},\
+      \}\}\
+    >\
+      <Tabs.Screen\
+        name="index"\
+        options=\{\{\
+          title: "Kalender",\
+          tabBarIcon: (\{ color, size \}) => (\
+            <Ionicons name="calendar-outline" size=\{size\} color=\{color\} />\
+          ),\
+        \}\}\
+      />\
+      <Tabs.Screen\
+        name="overview"\
+        options=\{\{\
+          title: "Overzicht",\
+          tabBarIcon: (\{ color, size \}) => (\
+            <Ionicons name="stats-chart-outline" size=\{size\} color=\{color\} />\
+          ),\
+        \}\}\
+      />\
+      <Tabs.Screen\
+        name="settings"\
+        options=\{\{\
+          title: "Instellingen",\
+          tabBarIcon: (\{ color, size \}) => (\
+            <Ionicons name="settings-outline" size=\{size\} color=\{color\} />\
+          ),\
+        \}\}\
+      />\
+    </Tabs>\
+  );\
+\}\
+\
+export default function TabLayout() \{\
+  if (isLiquidGlassAvailable()) \{\
+    return <NativeTabLayout />;\
+  \}\
+  return <ClassicTabLayout />;\
+\}\
+}

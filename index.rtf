@@ -1,0 +1,482 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import React, \{ useState, useMemo \} from "react";\
+import \{\
+  StyleSheet,\
+  Text,\
+  View,\
+  Pressable,\
+  ScrollView,\
+  useColorScheme,\
+  Platform,\
+\} from "react-native";\
+import \{ Ionicons \} from "@expo/vector-icons";\
+import \{ router \} from "expo-router";\
+import \{ useSafeAreaInsets \} from "react-native-safe-area-context";\
+import * as Haptics from "expo-haptics";\
+import \{ useWork \} from "@/lib/WorkContext";\
+import \{ useThemeColors \} from "@/constants/colors";\
+import \{ calculateWorkedMinutes, formatDecimalHours, minutesToDecimalHours \} from "@/lib/storage";\
+\
+const DAYS_NL = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];\
+const MONTHS_NL = [\
+  "Januari", "Februari", "Maart", "April", "Mei", "Juni",\
+  "Juli", "Augustus", "September", "Oktober", "November", "December",\
+];\
+\
+function getDaysInMonth(year: number, month: number) \{\
+  return new Date(year, month + 1, 0).getDate();\
+\}\
+\
+function getFirstDayOfMonth(year: number, month: number) \{\
+  const day = new Date(year, month, 1).getDay();\
+  return day === 0 ? 6 : day - 1;\
+\}\
+\
+function formatDateKey(year: number, month: number, day: number) \{\
+  return `$\{year\}-$\{(month + 1).toString().padStart(2, "0")\}-$\{day.toString().padStart(2, "0")\}`;\
+\}\
+\
+function isToday(year: number, month: number, day: number) \{\
+  const now = new Date();\
+  return now.getFullYear() === year && now.getMonth() === month && now.getDate() === day;\
+\}\
+\
+export default function CalendarScreen() \{\
+  const colorScheme = useColorScheme();\
+  const colors = useThemeColors(colorScheme);\
+  const insets = useSafeAreaInsets();\
+  const \{ entries, settings, getClientById \} = useWork();\
+\
+  const today = new Date();\
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());\
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());\
+  const [selectedDate, setSelectedDate] = useState<string>(\
+    formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())\
+  );\
+\
+  const entryMap = useMemo(() => \{\
+    const map: Record<string, \{ count: number; minutes: number \}> = \{\};\
+    entries.forEach((e) => \{\
+      if (!map[e.date]) map[e.date] = \{ count: 0, minutes: 0 \};\
+      map[e.date].count++;\
+      map[e.date].minutes += calculateWorkedMinutes(e);\
+    \});\
+    return map;\
+  \}, [entries]);\
+\
+  const selectedEntries = useMemo(\
+    () => entries.filter((e) => e.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime)),\
+    [entries, selectedDate],\
+  );\
+\
+  const selectedTotalMinutes = useMemo(\
+    () => selectedEntries.reduce((sum, e) => sum + calculateWorkedMinutes(e), 0),\
+    [selectedEntries],\
+  );\
+\
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);\
+  const firstDay = getFirstDayOfMonth(currentYear, currentMonth);\
+\
+  const goToPrevMonth = () => \{\
+    if (currentMonth === 0) \{\
+      setCurrentMonth(11);\
+      setCurrentYear(currentYear - 1);\
+    \} else \{\
+      setCurrentMonth(currentMonth - 1);\
+    \}\
+  \};\
+\
+  const goToNextMonth = () => \{\
+    if (currentMonth === 11) \{\
+      setCurrentMonth(0);\
+      setCurrentYear(currentYear + 1);\
+    \} else \{\
+      setCurrentMonth(currentMonth + 1);\
+    \}\
+  \};\
+\
+  const handleDayPress = (day: number) => \{\
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);\
+    const dateKey = formatDateKey(currentYear, currentMonth, day);\
+    setSelectedDate(dateKey);\
+  \};\
+\
+  const handleAddEntry = () => \{\
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);\
+    router.push(\{ pathname: "/add-entry", params: \{ date: selectedDate \} \});\
+  \};\
+\
+  const handleEntryPress = (id: string) => \{\
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);\
+    router.push(\{ pathname: "/edit-entry", params: \{ id \} \});\
+  \};\
+\
+  const webTopInset = Platform.OS === "web" ? 67 : 0;\
+\
+  const calendarCells: (number | null)[] = [];\
+  for (let i = 0; i < firstDay; i++) calendarCells.push(null);\
+  for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);\
+  while (calendarCells.length % 7 !== 0) calendarCells.push(null);\
+\
+  const selectedDateParts = selectedDate.split("-");\
+  const selectedDay = parseInt(selectedDateParts[2]);\
+  const selectedMonthIdx = parseInt(selectedDateParts[1]) - 1;\
+  const selectedYear = parseInt(selectedDateParts[0]);\
+\
+  const formattedSelectedDate = `$\{selectedDay\} $\{MONTHS_NL[selectedMonthIdx]\} $\{selectedYear\}`;\
+\
+  return (\
+    <View style=\{[styles.container, \{ backgroundColor: colors.background \}]\}>\
+      <View style=\{[styles.header, \{ paddingTop: insets.top + webTopInset + 8 \}]\}>\
+        <View style=\{styles.monthNav\}>\
+          <Pressable onPress=\{goToPrevMonth\} hitSlop=\{12\}>\
+            <Ionicons name="chevron-back" size=\{24\} color=\{colors.tint\} />\
+          </Pressable>\
+          <Text style=\{[styles.monthTitle, \{ color: colors.text \}]\}>\
+            \{MONTHS_NL[currentMonth]\} \{currentYear\}\
+          </Text>\
+          <Pressable onPress=\{goToNextMonth\} hitSlop=\{12\}>\
+            <Ionicons name="chevron-forward" size=\{24\} color=\{colors.tint\} />\
+          </Pressable>\
+        </View>\
+\
+        <View style=\{styles.weekDaysRow\}>\
+          \{DAYS_NL.map((d) => (\
+            <View key=\{d\} style=\{styles.weekDayCell\}>\
+              <Text style=\{[styles.weekDayText, \{ color: colors.textSecondary \}]\}>\{d\}</Text>\
+            </View>\
+          ))\}\
+        </View>\
+\
+        <View style=\{styles.calendarGrid\}>\
+          \{calendarCells.map((day, idx) => \{\
+            if (day === null) \{\
+              return <View key=\{`empty-$\{idx\}`\} style=\{styles.dayCell\} />;\
+            \}\
+            const dateKey = formatDateKey(currentYear, currentMonth, day);\
+            const hasEntries = !!entryMap[dateKey];\
+            const isTodayDate = isToday(currentYear, currentMonth, day);\
+            const isSelected = selectedDate === dateKey;\
+\
+            return (\
+              <Pressable\
+                key=\{dateKey\}\
+                style=\{[\
+                  styles.dayCell,\
+                  isSelected && \{ backgroundColor: colors.tint, borderRadius: 20 \},\
+                ]\}\
+                onPress=\{() => handleDayPress(day)\}\
+              >\
+                <Text\
+                  style=\{[\
+                    styles.dayText,\
+                    \{ color: colors.text \},\
+                    isTodayDate && !isSelected && \{ color: colors.tint, fontFamily: "Inter_700Bold" \},\
+                    isSelected && \{ color: "#FFFFFF", fontFamily: "Inter_700Bold" \},\
+                  ]\}\
+                >\
+                  \{day\}\
+                </Text>\
+                \{hasEntries && (\
+                  <View\
+                    style=\{[\
+                      styles.dot,\
+                      \{ backgroundColor: isSelected ? "#FFFFFF" : colors.accent \},\
+                    ]\}\
+                  />\
+                )\}\
+              </Pressable>\
+            );\
+          \})\}\
+        </View>\
+      </View>\
+\
+      <View style=\{[styles.divider, \{ backgroundColor: colors.border \}]\} />\
+\
+      <View style=\{styles.dayDetailHeader\}>\
+        <Text style=\{[styles.dayDetailTitle, \{ color: colors.text \}]\}>\
+          \{formattedSelectedDate\}\
+        </Text>\
+        <Pressable\
+          onPress=\{handleAddEntry\}\
+          style=\{[styles.addButton, \{ backgroundColor: colors.tint \}]\}\
+        >\
+          <Ionicons name="add" size=\{22\} color="#FFFFFF" />\
+        </Pressable>\
+      </View>\
+\
+      <ScrollView\
+        style=\{styles.entriesList\}\
+        contentContainerStyle=\{[styles.entriesContent, \{ paddingBottom: insets.bottom + 100 \}]\}\
+        showsVerticalScrollIndicator=\{false\}\
+        contentInsetAdjustmentBehavior="automatic"\
+      >\
+        \{selectedEntries.length === 0 ? (\
+          <View style=\{styles.emptyState\}>\
+            <Ionicons name="time-outline" size=\{48\} color=\{colors.textSecondary\} />\
+            <Text style=\{[styles.emptyText, \{ color: colors.textSecondary \}]\}>\
+              Geen uren geregistreerd\
+            </Text>\
+            <Text style=\{[styles.emptySubtext, \{ color: colors.textSecondary \}]\}>\
+              Tik op + om uren toe te voegen\
+            </Text>\
+          </View>\
+        ) : (\
+          <>\
+            \{selectedEntries.map((entry) => \{\
+              const worked = calculateWorkedMinutes(entry);\
+              const hours = minutesToDecimalHours(worked);\
+              const earnings = hours * settings.hourlyRate;\
+              const client = entry.clientId ? getClientById(entry.clientId) : undefined;\
+\
+              return (\
+                <Pressable\
+                  key=\{entry.id\}\
+                  style=\{(\{ pressed \}) => [\
+                    styles.entryCard,\
+                    \{\
+                      backgroundColor: colors.surface,\
+                      borderColor: colors.borderLight,\
+                      opacity: pressed ? 0.8 : 1,\
+                    \},\
+                  ]\}\
+                  onPress=\{() => handleEntryPress(entry.id)\}\
+                >\
+                  <View style=\{[styles.entryTimeline, \{ backgroundColor: colors.tint \}]\} />\
+                  <View style=\{styles.entryContent\}>\
+                    \{client && (\
+                      <View style=\{styles.clientRow\}>\
+                        <Ionicons name="business" size=\{13\} color=\{colors.tint\} />\
+                        <Text style=\{[styles.clientName, \{ color: colors.tint \}]\} numberOfLines=\{1\}>\
+                          \{client.companyName\}\
+                        </Text>\
+                      </View>\
+                    )\}\
+                    <View style=\{styles.entryTimeRow\}>\
+                      <Text style=\{[styles.entryTime, \{ color: colors.text \}]\}>\
+                        \{entry.startTime\} - \{entry.endTime\}\
+                      </Text>\
+                      \{entry.breakMinutes > 0 && (\
+                        <View style=\{[styles.breakBadge, \{ backgroundColor: colors.warningLight \}]\}>\
+                          <Text style=\{[styles.breakText, \{ color: colors.warning \}]\}>\
+                            \{entry.breakMinutes\}m pauze\
+                          </Text>\
+                        </View>\
+                      )\}\
+                    </View>\
+                    <View style=\{styles.entryBottomRow\}>\
+                      <Text style=\{[styles.entryHours, \{ color: colors.textSecondary \}]\}>\
+                        \{formatDecimalHours(hours)\}\
+                      </Text>\
+                      <Text style=\{[styles.entryEarnings, \{ color: colors.accent \}]\}>\
+                        \{settings.currency\}\{earnings.toFixed(2)\}\
+                      </Text>\
+                    </View>\
+                    \{entry.notes ? (\
+                      <Text style=\{[styles.entryNotes, \{ color: colors.textSecondary \}]\} numberOfLines=\{1\}>\
+                        \{entry.notes\}\
+                      </Text>\
+                    ) : null\}\
+                  </View>\
+                </Pressable>\
+              );\
+            \})\}\
+\
+            <View style=\{[styles.totalCard, \{ backgroundColor: colors.tintLight \}]\}>\
+              <View style=\{styles.totalRow\}>\
+                <Text style=\{[styles.totalLabel, \{ color: colors.tint \}]\}>Totaal</Text>\
+                <Text style=\{[styles.totalValue, \{ color: colors.tint \}]\}>\
+                  \{formatDecimalHours(minutesToDecimalHours(selectedTotalMinutes))\}\
+                </Text>\
+              </View>\
+              <View style=\{styles.totalRow\}>\
+                <Text style=\{[styles.totalLabel, \{ color: colors.tint \}]\}>Verdiensten</Text>\
+                <Text style=\{[styles.totalValue, \{ color: colors.tint \}]\}>\
+                  \{settings.currency\}\{(minutesToDecimalHours(selectedTotalMinutes) * settings.hourlyRate).toFixed(2)\}\
+                </Text>\
+              </View>\
+            </View>\
+          </>\
+        )\}\
+      </ScrollView>\
+    </View>\
+  );\
+\}\
+\
+const styles = StyleSheet.create(\{\
+  container: \{ flex: 1 \},\
+  header: \{ paddingHorizontal: 16 \},\
+  monthNav: \{\
+    flexDirection: "row",\
+    alignItems: "center",\
+    justifyContent: "space-between",\
+    paddingHorizontal: 8,\
+    marginBottom: 16,\
+  \},\
+  monthTitle: \{\
+    fontSize: 20,\
+    fontFamily: "Inter_700Bold",\
+  \},\
+  weekDaysRow: \{\
+    flexDirection: "row",\
+    marginBottom: 4,\
+  \},\
+  weekDayCell: \{\
+    flex: 1,\
+    alignItems: "center",\
+    paddingVertical: 4,\
+  \},\
+  weekDayText: \{\
+    fontSize: 12,\
+    fontFamily: "Inter_500Medium",\
+    textTransform: "uppercase" as const,\
+  \},\
+  calendarGrid: \{\
+    flexDirection: "row",\
+    flexWrap: "wrap",\
+  \},\
+  dayCell: \{\
+    width: "14.28%",\
+    aspectRatio: 1,\
+    alignItems: "center",\
+    justifyContent: "center",\
+  \},\
+  dayText: \{\
+    fontSize: 15,\
+    fontFamily: "Inter_400Regular",\
+  \},\
+  dot: \{\
+    width: 5,\
+    height: 5,\
+    borderRadius: 2.5,\
+    marginTop: 2,\
+    position: "absolute" as const,\
+    bottom: 6,\
+  \},\
+  divider: \{\
+    height: 1,\
+    marginHorizontal: 16,\
+    marginTop: 4,\
+  \},\
+  dayDetailHeader: \{\
+    flexDirection: "row",\
+    alignItems: "center",\
+    justifyContent: "space-between",\
+    paddingHorizontal: 20,\
+    paddingVertical: 12,\
+  \},\
+  dayDetailTitle: \{\
+    fontSize: 17,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+  addButton: \{\
+    width: 36,\
+    height: 36,\
+    borderRadius: 18,\
+    alignItems: "center",\
+    justifyContent: "center",\
+  \},\
+  entriesList: \{ flex: 1 \},\
+  entriesContent: \{ paddingHorizontal: 16 \},\
+  emptyState: \{\
+    alignItems: "center",\
+    justifyContent: "center",\
+    paddingVertical: 48,\
+    gap: 8,\
+  \},\
+  emptyText: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_600SemiBold",\
+    marginTop: 8,\
+  \},\
+  emptySubtext: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_400Regular",\
+  \},\
+  entryCard: \{\
+    flexDirection: "row",\
+    borderRadius: 14,\
+    marginBottom: 10,\
+    overflow: "hidden",\
+    borderWidth: 1,\
+  \},\
+  entryTimeline: \{\
+    width: 4,\
+  \},\
+  entryContent: \{\
+    flex: 1,\
+    padding: 14,\
+    gap: 6,\
+  \},\
+  clientRow: \{\
+    flexDirection: "row",\
+    alignItems: "center",\
+    gap: 5,\
+  \},\
+  clientName: \{\
+    fontSize: 13,\
+    fontFamily: "Inter_600SemiBold",\
+    flex: 1,\
+  \},\
+  entryTimeRow: \{\
+    flexDirection: "row",\
+    alignItems: "center",\
+    justifyContent: "space-between",\
+  \},\
+  entryTime: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_600SemiBold",\
+  \},\
+  breakBadge: \{\
+    paddingHorizontal: 8,\
+    paddingVertical: 2,\
+    borderRadius: 8,\
+  \},\
+  breakText: \{\
+    fontSize: 11,\
+    fontFamily: "Inter_500Medium",\
+  \},\
+  entryBottomRow: \{\
+    flexDirection: "row",\
+    justifyContent: "space-between",\
+    alignItems: "center",\
+  \},\
+  entryHours: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_400Regular",\
+  \},\
+  entryEarnings: \{\
+    fontSize: 15,\
+    fontFamily: "Inter_700Bold",\
+  \},\
+  entryNotes: \{\
+    fontSize: 13,\
+    fontFamily: "Inter_400Regular",\
+  \},\
+  totalCard: \{\
+    borderRadius: 14,\
+    padding: 16,\
+    marginTop: 4,\
+    gap: 8,\
+  \},\
+  totalRow: \{\
+    flexDirection: "row",\
+    justifyContent: "space-between",\
+    alignItems: "center",\
+  \},\
+  totalLabel: \{\
+    fontSize: 14,\
+    fontFamily: "Inter_500Medium",\
+  \},\
+  totalValue: \{\
+    fontSize: 16,\
+    fontFamily: "Inter_700Bold",\
+  \},\
+\});\
+}

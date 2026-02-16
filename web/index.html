@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Werkuren</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">Werkuren</div>
+        <div class="top-actions">
+          <button class="ghost" id="todayBtn">Vandaag</button>
+          <button class="ghost" id="logoutBtn">Uitloggen</button>
+        </div>
+      </header>
+
+      <main class="screen">
+        <section id="view-calendar" class="view active">
+          <div class="view-header">
+            <div class="month-nav">
+              <button class="icon" id="prevMonthBtn" aria-label="Vorige maand">◀</button>
+              <div class="month-title" id="monthTitle">Februari 2026</div>
+              <button class="icon" id="nextMonthBtn" aria-label="Volgende maand">▶</button>
+            </div>
+            <div class="weekday-row" id="weekdayRow"></div>
+          </div>
+
+          <div class="calendar-grid" id="calendarGrid"></div>
+
+          <div class="divider"></div>
+
+          <div class="day-detail">
+            <div class="day-detail-header">
+              <h2 id="selectedDateLabel">16 Februari 2026</h2>
+              <button class="fab" id="addEntryBtn">+</button>
+            </div>
+            <div class="entries" id="entriesList"></div>
+          </div>
+        </section>
+
+        <section id="view-overview" class="view">
+          <div class="view-header">
+            <h1>Overzicht</h1>
+          </div>
+
+          <div class="toggle" role="tablist">
+            <button id="toggleWeek" class="toggle-btn active" data-mode="week">Week</button>
+            <button id="toggleMonth" class="toggle-btn" data-mode="month">Maand</button>
+          </div>
+
+          <div class="period">
+            <button class="icon" id="prevPeriodBtn">◀</button>
+            <div id="periodLabel">Week 8 - 16 Feb t/m 22 Feb</div>
+            <button class="icon" id="nextPeriodBtn">▶</button>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-title">Gewerkt</div>
+              <div class="stat-value" id="statWorked">0u 00m</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Verdiensten</div>
+              <div class="stat-value" id="statEarnings">€0.00</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Dagen</div>
+              <div class="stat-value" id="statDays">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Pauze</div>
+              <div class="stat-value" id="statBreak">0m</div>
+            </div>
+          </div>
+
+          <div class="breakdown">
+            <h3>Dagoverzicht</h3>
+            <div id="dailyBreakdown"></div>
+          </div>
+
+          <button class="primary wide" id="exportPeriodBtn">Exporteer deze periode</button>
+          <button class="secondary wide" id="exportSelectBtn">Exporteer met dagselectie</button>
+        </section>
+
+        <section id="view-settings" class="view">
+          <div class="view-header">
+            <h1>Instellingen</h1>
+          </div>
+
+          <div class="card">
+            <h3>Uurtarief</h3>
+            <p>Dit wordt gebruikt om je verdiensten te berekenen.</p>
+            <div class="form-row">
+              <div class="input currency">
+                <input id="currencyInput" type="text" maxlength="3" placeholder="€" />
+              </div>
+              <div class="input rate">
+                <input id="hourlyRateInput" type="text" placeholder="40" />
+                <span>/ uur</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="primary wide" id="saveSettingsBtn">Opslaan</button>
+
+          <div class="card">
+            <div class="row-between">
+              <h3>Klantenbeheer</h3>
+              <button class="ghost" id="addClientBtn">+ Klant</button>
+            </div>
+            <div id="clientList" class="list"></div>
+          </div>
+
+          <div class="card">
+            <h3>Over deze app</h3>
+            <p>
+              Registreer je werkuren, houd je pauzes bij en exporteer je gegevens naar Excel.
+              Alle tijden worden in kwartieren afgerond.
+            </p>
+            <ul class="feature-list">
+              <li>Kalenderweergave met maandoverzicht</li>
+              <li>Start- en eindtijd in kwartieren</li>
+              <li>Klantenbestand met bedrijfsnaam en adres</li>
+              <li>Pauze registratie</li>
+              <li>Automatische verdiensten berekening</li>
+              <li>Export naar Excel/CSV met dag selectie</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <nav class="tabbar">
+        <button class="tab active" data-view="calendar">Kalender</button>
+        <button class="tab" data-view="overview">Overzicht</button>
+        <button class="tab" data-view="settings">Instellingen</button>
+      </nav>
+    </div>
+
+    <div class="modal hidden" id="loginModal" aria-hidden="true">
+      <div class="modal-card">
+        <h2>Inloggen</h2>
+        <p>Vul je wachtwoord in om verder te gaan.</p>
+        <input id="loginPassword" type="password" placeholder="Wachtwoord" />
+        <button class="primary wide" id="loginBtn">Inloggen</button>
+        <p class="hint" id="loginHint"></p>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="entryModal" aria-hidden="true">
+      <div class="modal-card large">
+        <div class="row-between">
+          <h2 id="entryModalTitle">Uren toevoegen</h2>
+          <button class="ghost" id="closeEntryModal">Sluiten</button>
+        </div>
+        <div class="form">
+          <label>Datum</label>
+          <input id="entryDate" type="date" />
+
+          <label>Klant</label>
+          <select id="entryClient"></select>
+
+          <label>Starttijd</label>
+          <select id="entryStart"></select>
+
+          <label>Eindtijd</label>
+          <select id="entryEnd"></select>
+
+          <label>Pauze</label>
+          <div class="chip-row" id="breakChips"></div>
+
+          <label>Notities (optioneel)</label>
+          <textarea id="entryNotes" rows="3" placeholder="Bijv. projectnaam..."></textarea>
+        </div>
+
+        <div class="row-between">
+          <button class="secondary" id="deleteEntryBtn">Verwijderen</button>
+          <button class="primary" id="saveEntryBtn">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="exportModal" aria-hidden="true">
+      <div class="modal-card large">
+        <div class="row-between">
+          <h2>Export selectie</h2>
+          <button class="ghost" id="closeExportModal">Sluiten</button>
+        </div>
+        <div id="exportSummary" class="summary"></div>
+        <div class="list" id="exportList"></div>
+        <button class="primary wide" id="exportSelectedBtn">Exporteer</button>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="clientModal" aria-hidden="true">
+      <div class="modal-card">
+        <h2>Klant toevoegen</h2>
+        <label>Bedrijfsnaam</label>
+        <input id="clientName" type="text" placeholder="Bedrijfsnaam" />
+        <label>Adres (optioneel)</label>
+        <input id="clientAddress" type="text" placeholder="Straat, plaats" />
+        <button class="primary wide" id="saveClientBtn">Opslaan</button>
+      </div>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
