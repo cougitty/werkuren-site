@@ -530,6 +530,7 @@ button.icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .modal {
@@ -727,9 +728,25 @@ input[type="color"] {
   width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(226, 231, 242, 0.5);
-  padding: 10px 12px;
+  padding: 12px 14px;
+  min-height: 46px;
   background: #fbfcff;
   font-family: inherit;
+}
+
+.filters select {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.ghost {
+  font-size: 14px;
+}
+
+.row-between .ghost {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #f1f4fa;
 }
 
 @media (max-width: 720px) {
