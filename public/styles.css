@@ -493,7 +493,38 @@ button.icon {
 }
 
 .login-card {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
+  padding: 28px;
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+
+.login-card h2 {
+  font-size: 26px;
+  margin: 4px 0 4px;
+}
+
+.login-card p {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+
+.login-card input {
+  height: 46px;
+  border-radius: 14px;
+  font-size: 15px;
+  background: #f7f9ff;
+  border: 1px solid rgba(226, 231, 242, 0.6);
+}
+
+.login-card button.primary {
+  height: 46px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+.login-card .link {
+  margin-top: -4px;
 }
 
 .modal-card.large {
@@ -581,6 +612,14 @@ button.icon {
   .app-shell {
     border-radius: 0;
     box-shadow: none;
+  }
+  .login-card {
+    width: min(360px, 92vw);
+    padding: 22px;
+    border-radius: 22px;
+  }
+  .login-card h2 {
+    font-size: 22px;
   }
 }
 .top-tabs {
