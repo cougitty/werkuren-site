@@ -52,6 +52,7 @@ const state = {
 const els = {
   viewCalendar: document.getElementById("view-calendar"),
   viewOverview: document.getElementById("view-overview"),
+  viewReports: document.getElementById("view-reports"),
   viewSettings: document.getElementById("view-settings"),
   tabs: document.querySelectorAll(".tab"),
   monthTitle: document.getElementById("monthTitle"),
@@ -80,6 +81,12 @@ const els = {
   exportSelectBtn: document.getElementById("exportSelectBtn"),
   exportMonthReportBtn: document.getElementById("exportMonthReportBtn"),
   exportYearReportBtn: document.getElementById("exportYearReportBtn"),
+  reportYear: document.getElementById("reportYear"),
+  reportClient: document.getElementById("reportClient"),
+  reportTotalHours: document.getElementById("reportTotalHours"),
+  reportTotalEarnings: document.getElementById("reportTotalEarnings"),
+  reportMonthlyChart: document.getElementById("reportMonthlyChart"),
+  reportClientsChart: document.getElementById("reportClientsChart"),
   currencyInput: document.getElementById("currencyInput"),
   hourlyRateInput: document.getElementById("hourlyRateInput"),
   saveSettingsBtn: document.getElementById("saveSettingsBtn"),
@@ -219,6 +226,24 @@ function attachEvents() {
     });
   }
 
+  if (els.reportYear) {
+    els.reportYear.addEventListener("change", (event) => {
+      const year = Number(event.target.value);
+      if (!Number.isNaN(year)) {
+        state.currentYear = year;
+        renderReports();
+        persistState();
+      }
+    });
+  }
+  if (els.reportClient) {
+    els.reportClient.addEventListener("change", (event) => {
+      state.overviewClientId = event.target.value || "";
+      renderReports();
+      persistState();
+    });
+  }
+
   els.exportPeriodBtn.addEventListener("click", () => exportPeriod());
   els.exportSelectBtn.addEventListener("click", () => openExportModal());
   if (els.exportMonthReportBtn) {
@@ -294,6 +319,7 @@ function renderAll() {
   renderEntries();
   renderFavorites();
   renderOverview();
+  renderReports();
   renderSettings();
 }
 
@@ -301,6 +327,7 @@ function renderViews() {
   const map = {
     calendar: els.viewCalendar,
     overview: els.viewOverview,
+    reports: els.viewReports,
     settings: els.viewSettings,
   };
   Object.values(map).forEach((view) => view.classList.remove("active"));
@@ -308,6 +335,9 @@ function renderViews() {
   els.tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.view === state.view);
   });
+  if (state.view === "reports") {
+    renderReports();
+  }
 }
 
 function renderWeekdays() {
@@ -1162,6 +1192,135 @@ function renderOverviewFilters() {
     els.overviewClient.appendChild(option);
   });
   els.overviewClient.value = state.overviewClientId || "";
+}
+
+function renderReportFilters() {
+  if (!els.reportYear || !els.reportClient) return;
+  const years = new Set(state.entries.map((e) => Number(e.date.slice(0, 4))));
+  years.add(state.currentYear);
+  const sortedYears = [...years].sort((a, b) => b - a);
+
+  els.reportYear.innerHTML = "";
+  sortedYears.forEach((year) => {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = String(year);
+    els.reportYear.appendChild(option);
+  });
+  els.reportYear.value = String(state.currentYear);
+
+  els.reportClient.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "Alle klanten";
+  els.reportClient.appendChild(allOption);
+  state.clients.forEach((client) => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.companyName;
+    els.reportClient.appendChild(option);
+  });
+  els.reportClient.value = state.overviewClientId || "";
+}
+
+function renderReports() {
+  if (!els.reportMonthlyChart || !els.reportClientsChart) return;
+  renderReportFilters();
+  const entries = getEntriesForYear(state.currentYear);
+
+  const totalMinutes = entries.reduce((sum, e) => sum + calculateWorkedMinutes(e), 0);
+  const totalHours = minutesToDecimalHours(totalMinutes);
+  const totalEarnings = entries.reduce((sum, e) => {
+    const hours = minutesToDecimalHours(calculateWorkedMinutes(e));
+    return sum + hours * getRateForEntry(e);
+  }, 0);
+
+  if (els.reportTotalHours) {
+    els.reportTotalHours.textContent = formatWorkedTime(totalMinutes);
+  }
+  if (els.reportTotalEarnings) {
+    els.reportTotalEarnings.textContent = `${state.settings.currency}${totalEarnings.toFixed(2)}`;
+  }
+
+  const monthlyHours = Array(12).fill(0);
+  const monthlyEarnings = Array(12).fill(0);
+  entries.forEach((e) => {
+    const month = Number(e.date.slice(5, 7)) - 1;
+    const hours = minutesToDecimalHours(calculateWorkedMinutes(e));
+    monthlyHours[month] += hours;
+    monthlyEarnings[month] += hours * getRateForEntry(e);
+  });
+
+  const clientsMap = new Map();
+  entries.forEach((e) => {
+    const client = state.clients.find((c) => c.id === e.clientId);
+    const label = client ? client.companyName : "Geen klant";
+    const hours = minutesToDecimalHours(calculateWorkedMinutes(e));
+    const total = clientsMap.get(label) || 0;
+    clientsMap.set(label, total + hours);
+  });
+  const clientLabels = [...clientsMap.keys()];
+  const clientValues = [...clientsMap.values()];
+
+  if (!state.reportCharts) state.reportCharts = {};
+
+  const monthLabels = MONTHS_NL.map((m) => m.slice(0, 3));
+  if (state.reportCharts.monthly) {
+    state.reportCharts.monthly.data.labels = monthLabels;
+    state.reportCharts.monthly.data.datasets[0].data = monthlyHours;
+    state.reportCharts.monthly.data.datasets[1].data = monthlyEarnings;
+    state.reportCharts.monthly.update();
+  } else {
+    state.reportCharts.monthly = new Chart(els.reportMonthlyChart, {
+      type: "bar",
+      data: {
+        labels: monthLabels,
+        datasets: [
+          {
+            label: "Uren",
+            data: monthlyHours,
+            backgroundColor: "#2f66f2",
+            borderRadius: 8,
+          },
+          {
+            label: "Verdiensten",
+            data: monthlyEarnings,
+            backgroundColor: "#17b26a",
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
+
+  if (state.reportCharts.clients) {
+    state.reportCharts.clients.data.labels = clientLabels;
+    state.reportCharts.clients.data.datasets[0].data = clientValues;
+    state.reportCharts.clients.update();
+  } else {
+    state.reportCharts.clients = new Chart(els.reportClientsChart, {
+      type: "doughnut",
+      data: {
+        labels: clientLabels,
+        datasets: [
+          {
+            data: clientValues,
+            backgroundColor: clientLabels.map((label) => {
+              const client = state.clients.find((c) => c.companyName === label);
+              return client?.color || "#aab3c6";
+            }),
+          },
+        ],
+      },
+      options: {
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
 }
 
 function getDailyBreakdown(entries) {

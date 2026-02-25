@@ -25,6 +25,7 @@
       <nav class="tabbar top-tabs">
         <button class="tab active" data-view="calendar">Kalender</button>
         <button class="tab" data-view="overview">Overzicht</button>
+        <button class="tab" data-view="reports">Rapporten</button>
         <button class="tab" data-view="settings">Instellingen</button>
       </nav>
 
@@ -112,6 +113,38 @@
           </div>
         </section>
 
+        <section id="view-reports" class="view">
+          <div class="view-header">
+            <h1>Rapporten</h1>
+          </div>
+
+          <div class="filters">
+            <select id="reportYear"></select>
+            <select id="reportClient"></select>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-title">Totaal uren</div>
+              <div class="stat-value" id="reportTotalHours">0u 00m</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Verdiensten</div>
+              <div class="stat-value" id="reportTotalEarnings">€0.00</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Uren per maand</h3>
+            <canvas id="reportMonthlyChart" height="220"></canvas>
+          </div>
+
+          <div class="card">
+            <h3>Top klanten</h3>
+            <canvas id="reportClientsChart" height="220"></canvas>
+          </div>
+        </section>
+
         <section id="view-settings" class="view">
           <div class="view-header">
             <h1>Instellingen</h1>
@@ -170,6 +203,7 @@
       <nav class="tabbar bottom-tabs">
         <button class="tab active" data-view="calendar">Kalender</button>
         <button class="tab" data-view="overview">Overzicht</button>
+        <button class="tab" data-view="reports">Rapporten</button>
         <button class="tab" data-view="settings">Instellingen</button>
       </nav>
     </div>
@@ -278,6 +312,7 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

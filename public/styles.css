@@ -448,7 +448,7 @@ body {
 
 .tabbar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: rgba(255, 255, 255, 0.88);
   border-top: 1px solid rgba(226, 231, 242, 0.8);
   backdrop-filter: blur(12px);
@@ -464,6 +464,7 @@ body {
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
+  font-size: 13px;
 }
 
 .tab.active {
