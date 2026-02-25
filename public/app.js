@@ -877,13 +877,14 @@ async function saveClient() {
   }
   if (USE_API) {
     try {
+      const cleanRate = hourlyRate === null ? null : Number(hourlyRate);
       await apiRequest("/clients", {
         method: "POST",
         body: {
           companyName: name,
           address: els.clientAddress.value.trim(),
           color: els.clientColor.value,
-          hourlyRate,
+          hourlyRate: cleanRate,
         },
       });
       els.clientName.value = "";

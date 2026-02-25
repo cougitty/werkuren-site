@@ -541,6 +541,7 @@ button.icon {
   place-items: center;
   padding: 18px;
   z-index: 20;
+  overflow: auto;
 }
 
 .login-modal {
@@ -560,6 +561,8 @@ button.icon {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
+  max-height: calc(100vh - 80px);
+  overflow: auto;
 }
 
 .login-card {
