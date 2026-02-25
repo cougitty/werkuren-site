@@ -238,6 +238,7 @@ function attachEvents() {
 
   window.addEventListener("click", (event) => {
     if (event.target.classList.contains("modal")) {
+      if (event.target.id === "loginModal") return;
       toggleModal(event.target, false);
     }
   });
