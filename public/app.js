@@ -52,7 +52,6 @@ const state = {
 const els = {
   viewCalendar: document.getElementById("view-calendar"),
   viewOverview: document.getElementById("view-overview"),
-  viewReports: document.getElementById("view-reports"),
   viewSettings: document.getElementById("view-settings"),
   tabs: document.querySelectorAll(".tab"),
   monthTitle: document.getElementById("monthTitle"),
@@ -81,8 +80,6 @@ const els = {
   exportSelectBtn: document.getElementById("exportSelectBtn"),
   exportMonthReportBtn: document.getElementById("exportMonthReportBtn"),
   exportYearReportBtn: document.getElementById("exportYearReportBtn"),
-  reportYear: document.getElementById("reportYear"),
-  reportClient: document.getElementById("reportClient"),
   reportTotalHours: document.getElementById("reportTotalHours"),
   reportTotalEarnings: document.getElementById("reportTotalEarnings"),
   reportMonthlyChart: document.getElementById("reportMonthlyChart"),
@@ -225,22 +222,10 @@ function attachEvents() {
       persistState();
     });
   }
-
-  if (els.reportYear) {
-    els.reportYear.addEventListener("change", (event) => {
-      const year = Number(event.target.value);
-      if (!Number.isNaN(year)) {
-        state.currentYear = year;
-        renderReports();
-        persistState();
-      }
-    });
-  }
-  if (els.reportClient) {
-    els.reportClient.addEventListener("change", (event) => {
-      state.overviewClientId = event.target.value || "";
-      renderReports();
-      persistState();
+  const reportsToggle = document.getElementById("toggleReports");
+  if (reportsToggle) {
+    reportsToggle.addEventListener("click", () => {
+      setOverviewMode("reports");
     });
   }
 
@@ -327,7 +312,6 @@ function renderViews() {
   const map = {
     calendar: els.viewCalendar,
     overview: els.viewOverview,
-    reports: els.viewReports,
     settings: els.viewSettings,
   };
   Object.values(map).forEach((view) => view.classList.remove("active"));
@@ -335,7 +319,7 @@ function renderViews() {
   els.tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.view === state.view);
   });
-  if (state.view === "reports") {
+  if (state.view === "overview") {
     renderReports();
   }
 }
@@ -543,7 +527,15 @@ function renderOverview() {
 
   els.toggleWeek.classList.toggle("active", state.overviewMode === "week");
   els.toggleMonth.classList.toggle("active", state.overviewMode === "month");
+  const reportsToggle = document.getElementById("toggleReports");
+  if (reportsToggle) {
+    reportsToggle.classList.toggle("active", state.overviewMode === "reports");
+  }
   renderOverviewFilters();
+  updateOverviewVisibility();
+  if (state.overviewMode === "reports") {
+    renderReports();
+  }
 }
 
 function renderSettings() {
@@ -1195,32 +1187,31 @@ function renderOverviewFilters() {
 }
 
 function renderReportFilters() {
-  if (!els.reportYear || !els.reportClient) return;
   const years = new Set(state.entries.map((e) => Number(e.date.slice(0, 4))));
   years.add(state.currentYear);
   const sortedYears = [...years].sort((a, b) => b - a);
 
-  els.reportYear.innerHTML = "";
+  els.overviewYear.innerHTML = "";
   sortedYears.forEach((year) => {
     const option = document.createElement("option");
     option.value = String(year);
     option.textContent = String(year);
-    els.reportYear.appendChild(option);
+    els.overviewYear.appendChild(option);
   });
-  els.reportYear.value = String(state.currentYear);
+  els.overviewYear.value = String(state.currentYear);
 
-  els.reportClient.innerHTML = "";
+  els.overviewClient.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "";
   allOption.textContent = "Alle klanten";
-  els.reportClient.appendChild(allOption);
+  els.overviewClient.appendChild(allOption);
   state.clients.forEach((client) => {
     const option = document.createElement("option");
     option.value = client.id;
     option.textContent = client.companyName;
-    els.reportClient.appendChild(option);
+    els.overviewClient.appendChild(option);
   });
-  els.reportClient.value = state.overviewClientId || "";
+  els.overviewClient.value = state.overviewClientId || "";
 }
 
 function renderReports() {
@@ -1320,6 +1311,18 @@ function renderReports() {
         plugins: { legend: { position: "bottom" } },
       },
     });
+  }
+}
+
+function updateOverviewVisibility() {
+  const overviewOnly = document.querySelectorAll(".overview-only");
+  const reportsPane = document.querySelector(".reports-pane");
+  const isReports = state.overviewMode === "reports";
+  overviewOnly.forEach((el) => {
+    el.classList.toggle("hidden", isReports);
+  });
+  if (reportsPane) {
+    reportsPane.classList.toggle("active", isReports);
   }
 }
 

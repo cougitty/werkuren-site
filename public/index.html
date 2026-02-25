@@ -25,7 +25,6 @@
       <nav class="tabbar top-tabs">
         <button class="tab active" data-view="calendar">Kalender</button>
         <button class="tab" data-view="overview">Overzicht</button>
-        <button class="tab" data-view="reports">Rapporten</button>
         <button class="tab" data-view="settings">Instellingen</button>
       </nav>
 
@@ -68,6 +67,7 @@
           <div class="toggle" role="tablist">
             <button id="toggleWeek" class="toggle-btn active" data-mode="week">Week</button>
             <button id="toggleMonth" class="toggle-btn" data-mode="month">Maand</button>
+            <button id="toggleReports" class="toggle-btn" data-mode="reports">Rapporten</button>
           </div>
 
           <div class="filters">
@@ -75,13 +75,13 @@
             <select id="overviewClient"></select>
           </div>
 
-          <div class="period">
+          <div class="period overview-only">
             <button class="icon" id="prevPeriodBtn">◀</button>
             <div id="periodLabel">Week 8 - 16 Feb t/m 22 Feb</div>
             <button class="icon" id="nextPeriodBtn">▶</button>
           </div>
 
-          <div class="stat-grid">
+          <div class="stat-grid overview-only">
             <div class="stat-card">
               <div class="stat-title">Gewerkt</div>
               <div class="stat-value" id="statWorked">0u 00m</div>
@@ -100,48 +100,40 @@
             </div>
           </div>
 
-          <div class="breakdown">
+          <div class="breakdown overview-only">
             <h3>Dagoverzicht</h3>
             <div id="dailyBreakdown"></div>
           </div>
 
-          <button class="primary wide" id="exportPeriodBtn">Exporteer deze periode</button>
-          <button class="secondary wide" id="exportSelectBtn">Exporteer met dagselectie</button>
-          <div class="report-actions">
-            <button class="secondary wide" id="exportMonthReportBtn">Download maandrapport</button>
-            <button class="secondary wide" id="exportYearReportBtn">Download jaarrapport</button>
-          </div>
-        </section>
+          <button class="primary wide overview-only" id="exportPeriodBtn">Exporteer deze periode</button>
+          <button class="secondary wide overview-only" id="exportSelectBtn">Exporteer met dagselectie</button>
 
-        <section id="view-reports" class="view">
-          <div class="view-header">
-            <h1>Rapporten</h1>
-          </div>
-
-          <div class="filters">
-            <select id="reportYear"></select>
-            <select id="reportClient"></select>
-          </div>
-
-          <div class="stat-grid">
-            <div class="stat-card">
-              <div class="stat-title">Totaal uren</div>
-              <div class="stat-value" id="reportTotalHours">0u 00m</div>
+          <div class="reports-pane">
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-title">Totaal uren</div>
+                <div class="stat-value" id="reportTotalHours">0u 00m</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">Verdiensten</div>
+                <div class="stat-value" id="reportTotalEarnings">€0.00</div>
+              </div>
             </div>
-            <div class="stat-card">
-              <div class="stat-title">Verdiensten</div>
-              <div class="stat-value" id="reportTotalEarnings">€0.00</div>
+
+            <div class="card">
+              <h3>Uren per maand</h3>
+              <canvas id="reportMonthlyChart" height="220"></canvas>
             </div>
-          </div>
 
-          <div class="card">
-            <h3>Uren per maand</h3>
-            <canvas id="reportMonthlyChart" height="220"></canvas>
-          </div>
+            <div class="card">
+              <h3>Top klanten</h3>
+              <canvas id="reportClientsChart" height="220"></canvas>
+            </div>
 
-          <div class="card">
-            <h3>Top klanten</h3>
-            <canvas id="reportClientsChart" height="220"></canvas>
+            <div class="report-actions">
+              <button class="secondary wide" id="exportMonthReportBtn">Download maandrapport</button>
+              <button class="secondary wide" id="exportYearReportBtn">Download jaarrapport</button>
+            </div>
           </div>
         </section>
 
@@ -203,7 +195,6 @@
       <nav class="tabbar bottom-tabs">
         <button class="tab active" data-view="calendar">Kalender</button>
         <button class="tab" data-view="overview">Overzicht</button>
-        <button class="tab" data-view="reports">Rapporten</button>
         <button class="tab" data-view="settings">Instellingen</button>
       </nav>
     </div>

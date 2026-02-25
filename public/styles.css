@@ -279,7 +279,7 @@ body {
 
 .toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   background: var(--surface-2);
   border-radius: 18px;
   padding: 4px;
@@ -675,6 +675,18 @@ button.icon {
   display: grid;
   gap: 10px;
   margin-top: 10px;
+}
+
+.reports-pane {
+  display: none;
+}
+
+.reports-pane.active {
+  display: block;
+}
+
+.overview-only.hidden {
+  display: none;
 }
 
 input[type="color"] {
