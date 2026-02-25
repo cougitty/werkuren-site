@@ -390,6 +390,9 @@ function renderEntries() {
 
     const bar = document.createElement("div");
     bar.className = "bar";
+    if (client?.color) {
+      bar.style.background = client.color;
+    }
 
     const body = document.createElement("div");
     body.className = "entry-body";
