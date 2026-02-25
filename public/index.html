@@ -155,13 +155,25 @@
       </nav>
     </div>
 
-    <div class="modal hidden" id="loginModal" aria-hidden="true">
-      <div class="modal-card">
+    <div class="modal hidden login-modal" id="loginModal" aria-hidden="true">
+      <div class="modal-card login-card">
         <h2>Inloggen</h2>
-        <p>Vul je wachtwoord in om verder te gaan.</p>
+        <p>Vul je gegevens in om verder te gaan.</p>
+        <input id="loginUsername" type="text" placeholder="Gebruikersnaam" />
         <input id="loginPassword" type="password" placeholder="Wachtwoord" />
         <button class="primary wide" id="loginBtn">Inloggen</button>
+        <button class="ghost link" id="showResetBtn">Wachtwoord vergeten?</button>
         <p class="hint" id="loginHint"></p>
+
+        <div class="reset-panel hidden" id="resetPanel">
+          <h3>Wachtwoord opnieuw instellen</h3>
+          <input id="resetCode" type="password" placeholder="Resetcode" />
+          <input id="resetUsername" type="text" placeholder="Gebruikersnaam" />
+          <input id="resetPassword" type="password" placeholder="Nieuw wachtwoord" />
+          <button class="primary wide" id="resetBtn">Reset wachtwoord</button>
+          <button class="ghost link" id="hideResetBtn">Terug naar inloggen</button>
+          <p class="hint" id="resetHint"></p>
+        </div>
       </div>
     </div>
 

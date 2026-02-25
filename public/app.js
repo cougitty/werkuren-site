@@ -82,8 +82,17 @@ const els = {
   logoutBtn: document.getElementById("logoutBtn"),
   loginModal: document.getElementById("loginModal"),
   loginBtn: document.getElementById("loginBtn"),
+  loginUsername: document.getElementById("loginUsername"),
   loginPassword: document.getElementById("loginPassword"),
   loginHint: document.getElementById("loginHint"),
+  showResetBtn: document.getElementById("showResetBtn"),
+  hideResetBtn: document.getElementById("hideResetBtn"),
+  resetPanel: document.getElementById("resetPanel"),
+  resetCode: document.getElementById("resetCode"),
+  resetUsername: document.getElementById("resetUsername"),
+  resetPassword: document.getElementById("resetPassword"),
+  resetBtn: document.getElementById("resetBtn"),
+  resetHint: document.getElementById("resetHint"),
   entryModal: document.getElementById("entryModal"),
   entryModalTitle: document.getElementById("entryModalTitle"),
   closeEntryModal: document.getElementById("closeEntryModal"),
@@ -200,6 +209,21 @@ function attachEvents() {
   els.todayBtn.addEventListener("click", jumpToToday);
   els.logoutBtn.addEventListener("click", logout);
   els.loginBtn.addEventListener("click", login);
+  if (els.showResetBtn) {
+    els.showResetBtn.addEventListener("click", () => {
+      els.resetPanel.classList.remove("hidden");
+      els.resetHint.textContent = "";
+    });
+  }
+  if (els.hideResetBtn) {
+    els.hideResetBtn.addEventListener("click", () => {
+      els.resetPanel.classList.add("hidden");
+      els.resetHint.textContent = "";
+    });
+  }
+  if (els.resetBtn) {
+    els.resetBtn.addEventListener("click", resetPassword);
+  }
 
   els.closeEntryModal.addEventListener("click", () => toggleModal(els.entryModal, false));
   els.saveEntryBtn.addEventListener("click", () => {
@@ -933,11 +957,12 @@ async function login() {
     try {
       const result = await apiRequest("/login", {
         method: "POST",
-        body: { password: els.loginPassword.value },
+        body: { username: els.loginUsername.value, password: els.loginPassword.value },
       });
       setToken(result.token);
       toggleModal(els.loginModal, false);
       els.loginPassword.value = "";
+      if (els.loginUsername) els.loginUsername.value = "";
       await refreshFromApi();
     } catch {
       els.loginHint.textContent = "Onjuist wachtwoord.";
@@ -960,6 +985,26 @@ function logout() {
     localStorage.removeItem(AUTH_KEY);
   }
   enforceAuth();
+}
+
+async function resetPassword() {
+  if (!USE_API) return;
+  try {
+    await apiRequest("/reset", {
+      method: "POST",
+      body: {
+        resetCode: els.resetCode.value,
+        username: els.resetUsername.value,
+        newPassword: els.resetPassword.value,
+      },
+    });
+    els.resetHint.textContent = "Wachtwoord opnieuw ingesteld. Log nu in.";
+    els.resetCode.value = "";
+    els.resetUsername.value = "";
+    els.resetPassword.value = "";
+  } catch {
+    els.resetHint.textContent = "Reset mislukt. Controleer de gegevens.";
+  }
 }
 
 function toggleModal(modal, show) {

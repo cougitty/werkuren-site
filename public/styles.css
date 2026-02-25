@@ -473,6 +473,11 @@ button.icon {
   z-index: 20;
 }
 
+.login-modal {
+  background: linear-gradient(180deg, rgba(248, 249, 253, 0.98), rgba(238, 242, 251, 0.98));
+  backdrop-filter: blur(6px);
+}
+
 .modal.hidden {
   display: none;
 }
@@ -485,6 +490,10 @@ button.icon {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
+}
+
+.login-card {
+  width: min(420px, 100%);
 }
 
 .modal-card.large {
@@ -505,6 +514,22 @@ button.icon {
 
 .modal-card textarea {
   resize: vertical;
+}
+
+.reset-panel {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(226, 231, 242, 0.6);
+  display: grid;
+  gap: 10px;
+}
+
+.reset-panel.hidden {
+  display: none;
+}
+
+.link {
+  text-align: left;
 }
 
 .chip-row {

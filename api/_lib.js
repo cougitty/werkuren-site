@@ -56,16 +56,46 @@ export function requireAuth(req, res) {
   }
 }
 
-export function checkPassword(input) {
-  const secret = process.env.APP_PASSWORD || "";
+export function signToken() {
+  return jwt.sign({ role: "owner" }, process.env.APP_JWT_SECRET, { expiresIn: "30d" });
+}
+
+export function checkResetCode(input) {
+  const secret = process.env.APP_RESET_CODE || "";
   const a = Buffer.from(input || "");
   const b = Buffer.from(secret);
+  if (!secret) return false;
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
 
-export function signToken() {
-  return jwt.sign({ role: "owner" }, process.env.APP_JWT_SECRET, { expiresIn: "30d" });
+export function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+export function verifyPassword(password, stored) {
+  if (!stored) return false;
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const test = crypto.scryptSync(password, salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(test, "hex"));
+}
+
+export async function getAuthUser(client) {
+  const { data } = await client.from("auth_users").select("*").eq("id", 1).single();
+  return data || null;
+}
+
+export async function setAuthUser(client, { username, passwordHash }) {
+  const { data, error } = await client
+    .from("auth_users")
+    .upsert({ id: 1, username, password_hash: passwordHash })
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function getSettings(client) {

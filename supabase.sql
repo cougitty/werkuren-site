@@ -30,6 +30,28 @@ insert into settings (id, hourly_rate, currency)
 values (1, 40, '€')
 on conflict (id) do nothing;
 
-alter table clients disable row level security;
-alter table entries disable row level security;
-alter table settings disable row level security;
+create table if not exists auth_users (
+  id integer primary key,
+  username text not null,
+  password_hash text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists set_auth_users_updated_at on auth_users;
+create trigger set_auth_users_updated_at
+before update on auth_users
+for each row execute function set_updated_at();
+
+alter table clients enable row level security;
+alter table entries enable row level security;
+alter table settings enable row level security;
+alter table auth_users enable row level security;
