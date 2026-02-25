@@ -4,8 +4,13 @@ create table if not exists clients (
   id uuid primary key default gen_random_uuid(),
   company_name text not null,
   address text,
+  color text,
+  hourly_rate numeric,
   created_at timestamptz not null default now()
 );
+
+alter table clients add column if not exists color text;
+alter table clients add column if not exists hourly_rate numeric;
 
 create table if not exists entries (
   id uuid primary key default gen_random_uuid(),
@@ -19,6 +24,17 @@ create table if not exists entries (
 );
 
 create index if not exists entries_date_idx on entries(date);
+
+create table if not exists favorites (
+  id uuid primary key default gen_random_uuid(),
+  label text not null,
+  start_time text not null,
+  end_time text not null,
+  break_minutes integer not null default 0,
+  notes text,
+  client_id uuid references clients(id) on delete set null,
+  created_at timestamptz not null default now()
+);
 
 create table if not exists settings (
   id integer primary key,
@@ -53,5 +69,6 @@ for each row execute function set_updated_at();
 
 alter table clients enable row level security;
 alter table entries enable row level security;
+alter table favorites enable row level security;
 alter table settings enable row level security;
 alter table auth_users enable row level security;

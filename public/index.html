@@ -48,6 +48,13 @@
               <h2 id="selectedDateLabel">16 Februari 2026</h2>
               <button class="fab" id="addEntryBtn">+</button>
             </div>
+            <div class="favorites-bar">
+              <div class="row-between">
+                <h3>Favorieten</h3>
+                <button class="ghost" id="addFavoriteBtn">+ Favoriet</button>
+              </div>
+              <div class="favorites-list" id="favoritesList"></div>
+            </div>
             <div class="entries" id="entriesList"></div>
           </div>
         </section>
@@ -99,6 +106,10 @@
 
           <button class="primary wide" id="exportPeriodBtn">Exporteer deze periode</button>
           <button class="secondary wide" id="exportSelectBtn">Exporteer met dagselectie</button>
+          <div class="report-actions">
+            <button class="secondary wide" id="exportMonthReportBtn">Download maandrapport</button>
+            <button class="secondary wide" id="exportYearReportBtn">Download jaarrapport</button>
+          </div>
         </section>
 
         <section id="view-settings" class="view">
@@ -128,6 +139,14 @@
               <button class="ghost" id="addClientBtn">+ Klant</button>
             </div>
             <div id="clientList" class="list"></div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h3>Favorieten</h3>
+              <button class="ghost" id="addFavoriteBtnSettings">+ Favoriet</button>
+            </div>
+            <div id="favoriteListSettings" class="list"></div>
           </div>
 
           <div class="card">
@@ -229,7 +248,33 @@
         <input id="clientName" type="text" placeholder="Bedrijfsnaam" />
         <label>Adres (optioneel)</label>
         <input id="clientAddress" type="text" placeholder="Straat, plaats" />
+        <label>Kleur</label>
+        <input id="clientColor" type="color" value="#2f66f2" />
+        <label>Uurtarief (optioneel)</label>
+        <input id="clientRate" type="text" placeholder="Bijv. 55" />
         <button class="primary wide" id="saveClientBtn">Opslaan</button>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="favoriteModal" aria-hidden="true">
+      <div class="modal-card">
+        <h2>Favoriet toevoegen</h2>
+        <label>Naam</label>
+        <input id="favoriteLabel" type="text" placeholder="Bijv. Kantoordag" />
+        <label>Klant</label>
+        <select id="favoriteClient"></select>
+        <label>Starttijd</label>
+        <input id="favoriteStart" type="time" step="900" />
+        <label>Eindtijd</label>
+        <input id="favoriteEnd" type="time" step="900" />
+        <label>Pauze</label>
+        <div class="chip-row" id="favoriteBreakChips"></div>
+        <label>Notities (optioneel)</label>
+        <textarea id="favoriteNotes" rows="2" placeholder="Bijv. vaste klus..."></textarea>
+        <div class="row-between">
+          <button class="secondary" id="deleteFavoriteBtn">Verwijderen</button>
+          <button class="primary" id="saveFavoriteBtn">Opslaan</button>
+        </div>
       </div>
     </div>
 

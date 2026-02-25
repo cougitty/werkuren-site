@@ -42,8 +42,11 @@ const state = {
   settings: { hourlyRate: 40, currency: "€" },
   entries: [],
   clients: [],
+  favorites: [],
   editingEntryId: null,
   breakMinutes: 30,
+  editingFavoriteId: null,
+  favoriteBreakMinutes: 30,
 };
 
 const els = {
@@ -59,6 +62,8 @@ const els = {
   prevMonthBtn: document.getElementById("prevMonthBtn"),
   nextMonthBtn: document.getElementById("nextMonthBtn"),
   addEntryBtn: document.getElementById("addEntryBtn"),
+  favoritesList: document.getElementById("favoritesList"),
+  addFavoriteBtn: document.getElementById("addFavoriteBtn"),
   toggleWeek: document.getElementById("toggleWeek"),
   toggleMonth: document.getElementById("toggleMonth"),
   periodLabel: document.getElementById("periodLabel"),
@@ -73,11 +78,15 @@ const els = {
   dailyBreakdown: document.getElementById("dailyBreakdown"),
   exportPeriodBtn: document.getElementById("exportPeriodBtn"),
   exportSelectBtn: document.getElementById("exportSelectBtn"),
+  exportMonthReportBtn: document.getElementById("exportMonthReportBtn"),
+  exportYearReportBtn: document.getElementById("exportYearReportBtn"),
   currencyInput: document.getElementById("currencyInput"),
   hourlyRateInput: document.getElementById("hourlyRateInput"),
   saveSettingsBtn: document.getElementById("saveSettingsBtn"),
   addClientBtn: document.getElementById("addClientBtn"),
   clientList: document.getElementById("clientList"),
+  addFavoriteBtnSettings: document.getElementById("addFavoriteBtnSettings"),
+  favoriteListSettings: document.getElementById("favoriteListSettings"),
   todayBtn: document.getElementById("todayBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
   loginModal: document.getElementById("loginModal"),
@@ -113,6 +122,17 @@ const els = {
   saveClientBtn: document.getElementById("saveClientBtn"),
   clientName: document.getElementById("clientName"),
   clientAddress: document.getElementById("clientAddress"),
+  clientColor: document.getElementById("clientColor"),
+  clientRate: document.getElementById("clientRate"),
+  favoriteModal: document.getElementById("favoriteModal"),
+  favoriteLabel: document.getElementById("favoriteLabel"),
+  favoriteClient: document.getElementById("favoriteClient"),
+  favoriteStart: document.getElementById("favoriteStart"),
+  favoriteEnd: document.getElementById("favoriteEnd"),
+  favoriteBreakChips: document.getElementById("favoriteBreakChips"),
+  favoriteNotes: document.getElementById("favoriteNotes"),
+  saveFavoriteBtn: document.getElementById("saveFavoriteBtn"),
+  deleteFavoriteBtn: document.getElementById("deleteFavoriteBtn"),
 };
 
 init();
@@ -157,6 +177,7 @@ function persistState() {
       settings: state.settings,
       entries: state.entries,
       clients: state.clients,
+      favorites: state.favorites,
     })
   );
 }
@@ -172,6 +193,9 @@ function attachEvents() {
   els.prevMonthBtn.addEventListener("click", () => shiftMonth(-1));
   els.nextMonthBtn.addEventListener("click", () => shiftMonth(1));
   els.addEntryBtn.addEventListener("click", () => openEntryModal());
+  if (els.addFavoriteBtn) {
+    els.addFavoriteBtn.addEventListener("click", () => openFavoriteModal());
+  }
 
   els.toggleWeek.addEventListener("click", () => setOverviewMode("week"));
   els.toggleMonth.addEventListener("click", () => setOverviewMode("month"));
@@ -197,6 +221,12 @@ function attachEvents() {
 
   els.exportPeriodBtn.addEventListener("click", () => exportPeriod());
   els.exportSelectBtn.addEventListener("click", () => openExportModal());
+  if (els.exportMonthReportBtn) {
+    els.exportMonthReportBtn.addEventListener("click", () => exportMonthReport());
+  }
+  if (els.exportYearReportBtn) {
+    els.exportYearReportBtn.addEventListener("click", () => exportYearReport());
+  }
 
   els.saveSettingsBtn.addEventListener("click", () => {
     void saveSettings();
@@ -205,6 +235,9 @@ function attachEvents() {
   els.saveClientBtn.addEventListener("click", () => {
     void saveClient();
   });
+  if (els.addFavoriteBtnSettings) {
+    els.addFavoriteBtnSettings.addEventListener("click", () => openFavoriteModal());
+  }
 
   els.todayBtn.addEventListener("click", jumpToToday);
   els.logoutBtn.addEventListener("click", logout);
@@ -233,6 +266,17 @@ function attachEvents() {
     void deleteEntry();
   });
 
+  if (els.saveFavoriteBtn) {
+    els.saveFavoriteBtn.addEventListener("click", () => {
+      void saveFavorite();
+    });
+  }
+  if (els.deleteFavoriteBtn) {
+    els.deleteFavoriteBtn.addEventListener("click", () => {
+      void deleteFavorite();
+    });
+  }
+
   els.closeExportModal.addEventListener("click", () => toggleModal(els.exportModal, false));
   els.exportSelectedBtn.addEventListener("click", exportSelected);
 
@@ -248,6 +292,7 @@ function renderAll() {
   renderViews();
   renderCalendar();
   renderEntries();
+  renderFavorites();
   renderOverview();
   renderSettings();
 }
@@ -297,10 +342,17 @@ function renderCalendar() {
       cell.classList.toggle("selected", dateKey === state.selectedDate);
       cell.classList.toggle("today", isToday(state.currentYear, state.currentMonth, day));
 
-      if (hasEntries(dateKey)) {
-        const dot = document.createElement("span");
-        dot.className = "dot";
-        cell.appendChild(dot);
+      const dots = getDateDots(dateKey);
+      if (dots.length > 0) {
+        const wrap = document.createElement("div");
+        wrap.className = "dot-row";
+        dots.slice(0, 3).forEach((color) => {
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          dot.style.background = color;
+          wrap.appendChild(dot);
+        });
+        cell.appendChild(wrap);
       }
 
       cell.addEventListener("click", () => {
@@ -345,7 +397,21 @@ function renderEntries() {
     const client = state.clients.find((c) => c.id === entry.clientId);
     const title = document.createElement("div");
     title.className = "entry-title";
-    title.textContent = client ? client.companyName : "Registratie";
+    const titleText = document.createElement("span");
+    titleText.textContent = client ? "Registratie" : "Registratie";
+    title.appendChild(titleText);
+    if (client) {
+      const chip = document.createElement("span");
+      chip.className = "client-chip";
+      const dot = document.createElement("span");
+      dot.className = "color-dot";
+      dot.style.background = client.color || "#2f66f2";
+      const label = document.createElement("span");
+      label.textContent = client.companyName;
+      chip.appendChild(dot);
+      chip.appendChild(label);
+      title.appendChild(chip);
+    }
 
     const meta = document.createElement("div");
     meta.className = "entry-meta";
@@ -355,7 +421,8 @@ function renderEntries() {
 
     const earnings = document.createElement("div");
     earnings.className = "entry-meta";
-    earnings.innerHTML = `<span>${state.settings.currency}${(hours * state.settings.hourlyRate).toFixed(2)}</span>`;
+    const rate = getRateForEntry(entry);
+    earnings.innerHTML = `<span>${state.settings.currency}${(hours * rate).toFixed(2)}</span>`;
 
     body.appendChild(title);
     body.appendChild(meta);
@@ -374,13 +441,42 @@ function renderEntries() {
   });
 }
 
+function renderFavorites() {
+  if (!els.favoritesList) return;
+  els.favoritesList.innerHTML = "";
+  if (!state.favorites || state.favorites.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "hint";
+    empty.textContent = "Nog geen favorieten.";
+    els.favoritesList.appendChild(empty);
+    return;
+  }
+  state.favorites.forEach((fav) => {
+    const pill = document.createElement("button");
+    pill.className = "favorite-pill";
+    const dot = document.createElement("span");
+    dot.className = "color-dot";
+    const client = state.clients.find((c) => c.id === fav.clientId);
+    dot.style.background = client?.color || "#2f66f2";
+    const label = document.createElement("span");
+    label.textContent = fav.label;
+    pill.appendChild(dot);
+    pill.appendChild(label);
+    pill.addEventListener("click", () => quickAddFavorite(fav));
+    els.favoritesList.appendChild(pill);
+  });
+}
+
 function renderOverview() {
   const filtered = getFilteredEntries();
 
   const totalMinutes = filtered.reduce((sum, e) => sum + calculateWorkedMinutes(e), 0);
   const totalBreak = filtered.reduce((sum, e) => sum + e.breakMinutes, 0);
   const totalHours = minutesToDecimalHours(totalMinutes);
-  const totalEarnings = totalHours * state.settings.hourlyRate;
+  const totalEarnings = filtered.reduce((sum, e) => {
+    const hours = minutesToDecimalHours(calculateWorkedMinutes(e));
+    return sum + hours * getRateForEntry(e);
+  }, 0);
   const daysWorked = new Set(filtered.map((e) => e.date)).size;
 
   els.statWorked.textContent = formatWorkedTime(totalMinutes);
@@ -432,7 +528,12 @@ function renderSettings() {
   state.clients.forEach((client) => {
     const item = document.createElement("div");
     item.className = "list-item";
-    item.innerHTML = `<div><strong>${client.companyName}</strong><div class="hint">${client.address || ""}</div></div>`;
+    const rateLabel = client.hourlyRate ? `${state.settings.currency}${client.hourlyRate}/uur` : "Standaard tarief";
+    item.innerHTML = `<div><strong>${client.companyName}</strong><div class="hint">${client.address || ""}</div><div class="hint">${rateLabel}</div></div>`;
+    const color = document.createElement("span");
+    color.className = "color-dot";
+    color.style.background = client.color || "#2f66f2";
+    item.prepend(color);
     const removeBtn = document.createElement("button");
     removeBtn.className = "ghost";
     removeBtn.textContent = "Verwijder";
@@ -440,6 +541,35 @@ function renderSettings() {
     item.appendChild(removeBtn);
     els.clientList.appendChild(item);
   });
+
+  if (els.favoriteListSettings) {
+    els.favoriteListSettings.innerHTML = "";
+    if (!state.favorites || state.favorites.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "list-item";
+      empty.textContent = "Nog geen favorieten";
+      els.favoriteListSettings.appendChild(empty);
+    } else {
+      state.favorites.forEach((fav) => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        const client = state.clients.find((c) => c.id === fav.clientId);
+        const color = document.createElement("span");
+        color.className = "color-dot";
+        color.style.background = client?.color || "#2f66f2";
+        const info = document.createElement("div");
+        info.innerHTML = `<strong>${fav.label}</strong><div class="hint">${fav.startTime} - ${fav.endTime} (${fav.breakMinutes}m)</div>`;
+        const editBtn = document.createElement("button");
+        editBtn.className = "ghost";
+        editBtn.textContent = "Bewerk";
+        editBtn.addEventListener("click", () => openFavoriteModal(fav.id));
+        item.appendChild(color);
+        item.appendChild(info);
+        item.appendChild(editBtn);
+        els.favoriteListSettings.appendChild(item);
+      });
+    }
+  }
 }
 
 function openEntryModal(entryId = null) {
@@ -458,6 +588,124 @@ function openEntryModal(entryId = null) {
   renderBreakChips();
   els.deleteEntryBtn.style.display = entry ? "inline-flex" : "none";
   toggleModal(els.entryModal, true);
+}
+
+function openFavoriteModal(favoriteId = null) {
+  state.editingFavoriteId = favoriteId;
+  const fav = state.favorites.find((f) => f.id === favoriteId);
+  if (!els.favoriteModal) return;
+  els.favoriteLabel.value = fav ? fav.label : "";
+  populateFavoriteClients(fav?.clientId || "");
+  els.favoriteStart.value = fav ? fav.startTime : "09:00";
+  els.favoriteEnd.value = fav ? fav.endTime : "17:00";
+  state.favoriteBreakMinutes = fav ? fav.breakMinutes : 30;
+  els.favoriteNotes.value = fav ? fav.notes : "";
+  renderFavoriteBreakChips();
+  els.deleteFavoriteBtn.style.display = fav ? "inline-flex" : "none";
+  toggleModal(els.favoriteModal, true);
+}
+
+function populateFavoriteClients(selectedId) {
+  if (!els.favoriteClient) return;
+  els.favoriteClient.innerHTML = "";
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "Geen klant";
+  els.favoriteClient.appendChild(empty);
+  state.clients.forEach((client) => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.companyName;
+    els.favoriteClient.appendChild(option);
+  });
+  els.favoriteClient.value = selectedId || "";
+}
+
+function renderFavoriteBreakChips() {
+  if (!els.favoriteBreakChips) return;
+  els.favoriteBreakChips.innerHTML = "";
+  BREAK_OPTIONS.forEach((minutes) => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.textContent = `${minutes}m`;
+    chip.classList.toggle("active", minutes === state.favoriteBreakMinutes);
+    chip.addEventListener("click", () => {
+      state.favoriteBreakMinutes = minutes;
+      renderFavoriteBreakChips();
+    });
+    els.favoriteBreakChips.appendChild(chip);
+  });
+}
+
+async function saveFavorite() {
+  if (!USE_API) return;
+  const label = els.favoriteLabel.value.trim();
+  if (!label) {
+    alert("Vul een naam in.");
+    return;
+  }
+  const payload = {
+    label,
+    clientId: els.favoriteClient.value || "",
+    startTime: els.favoriteStart.value,
+    endTime: els.favoriteEnd.value,
+    breakMinutes: state.favoriteBreakMinutes,
+    notes: els.favoriteNotes.value.trim(),
+  };
+  if (timeToMinutes(payload.endTime) <= timeToMinutes(payload.startTime)) {
+    alert("De eindtijd moet na de starttijd liggen.");
+    return;
+  }
+  if (!isQuarterTime(payload.startTime) || !isQuarterTime(payload.endTime)) {
+    alert("Kies tijden op kwartieren (00, 15, 30, 45).");
+    return;
+  }
+
+  try {
+    if (state.editingFavoriteId) {
+      await apiRequest(`/favorites/${state.editingFavoriteId}`, {
+        method: "PUT",
+        body: payload,
+      });
+    } else {
+      await apiRequest("/favorites", { method: "POST", body: payload });
+    }
+    toggleModal(els.favoriteModal, false);
+    await refreshFromApi();
+  } catch {
+    alert("Opslaan mislukt.");
+  }
+}
+
+async function deleteFavorite() {
+  if (!USE_API || !state.editingFavoriteId) return;
+  try {
+    await apiRequest(`/favorites/${state.editingFavoriteId}`, { method: "DELETE" });
+    toggleModal(els.favoriteModal, false);
+    await refreshFromApi();
+  } catch {
+    alert("Verwijderen mislukt.");
+  }
+}
+
+async function quickAddFavorite(fav) {
+  if (!USE_API) return;
+  try {
+    await apiRequest("/entries", {
+      method: "POST",
+      body: {
+        date: state.selectedDate,
+        startTime: fav.startTime,
+        endTime: fav.endTime,
+        breakMinutes: fav.breakMinutes,
+        notes: fav.notes || "",
+        clientId: fav.clientId || "",
+      },
+    });
+    await refreshFromApi();
+  } catch {
+    alert("Kon favoriet niet toevoegen.");
+  }
 }
 
 function populateClients(selectedId) {
@@ -618,14 +866,26 @@ async function saveClient() {
     alert("Vul een bedrijfsnaam in.");
     return;
   }
+  const rateValue = String(els.clientRate.value || "").replace(",", ".");
+  const hourlyRate = rateValue ? Number(rateValue) : null;
+  if (rateValue && (Number.isNaN(hourlyRate) || hourlyRate < 0)) {
+    alert("Voer een geldig uurtarief in.");
+    return;
+  }
   if (USE_API) {
     try {
       await apiRequest("/clients", {
         method: "POST",
-        body: { companyName: name, address: els.clientAddress.value.trim() },
+        body: {
+          companyName: name,
+          address: els.clientAddress.value.trim(),
+          color: els.clientColor.value,
+          hourlyRate,
+        },
       });
       els.clientName.value = "";
       els.clientAddress.value = "";
+      els.clientRate.value = "";
       toggleModal(els.clientModal, false);
       await refreshFromApi();
     } catch {
@@ -637,9 +897,12 @@ async function saveClient() {
     id: crypto.randomUUID(),
     companyName: name,
     address: els.clientAddress.value.trim(),
+    color: els.clientColor.value,
+    hourlyRate,
   });
   els.clientName.value = "";
   els.clientAddress.value = "";
+  els.clientRate.value = "";
   persistState();
   renderSettings();
   toggleModal(els.clientModal, false);
@@ -718,6 +981,26 @@ function exportPeriod() {
   downloadCSV(generateCSV(entries), fileName);
 }
 
+function exportMonthReport() {
+  const entries = getEntriesForMonth(state.currentYear, state.currentMonth);
+  if (entries.length === 0) {
+    alert("Geen uren om te exporteren voor deze maand.");
+    return;
+  }
+  const fileName = `Uren_Maand_${MONTHS_NL[state.currentMonth]}_${state.currentYear}.csv`;
+  downloadCSV(generateCSV(entries), fileName);
+}
+
+function exportYearReport() {
+  const entries = getEntriesForYear(state.currentYear);
+  if (entries.length === 0) {
+    alert("Geen uren om te exporteren voor dit jaar.");
+    return;
+  }
+  const fileName = `Uren_Jaar_${state.currentYear}.csv`;
+  downloadCSV(generateCSV(entries), fileName);
+}
+
 function openExportModal() {
   renderExportList();
   toggleModal(els.exportModal, true);
@@ -793,13 +1076,14 @@ function generateCSV(entries) {
     const worked = calculateWorkedMinutes(entry);
     const hours = minutesToDecimalHours(worked);
     const client = state.clients.find((c) => c.id === entry.clientId);
+    const rate = getRateForEntry(entry);
     rows.push([
       entry.date,
       entry.startTime,
       entry.endTime,
       `${entry.breakMinutes}m`,
       formatDecimalHours(hours),
-      `${state.settings.currency}${(hours * state.settings.hourlyRate).toFixed(2)}`,
+      `${state.settings.currency}${(hours * rate).toFixed(2)}`,
       client ? client.companyName : "",
       entry.notes || "",
     ]);
@@ -829,6 +1113,20 @@ function filterEntriesByPeriod(entries) {
 
 function getFilteredEntries() {
   const base = filterEntriesByPeriod(state.entries);
+  if (!state.overviewClientId) return base;
+  return base.filter((e) => e.clientId === state.overviewClientId);
+}
+
+function getEntriesForMonth(year, month) {
+  const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const base = state.entries.filter((e) => e.date.startsWith(prefix));
+  if (!state.overviewClientId) return base;
+  return base.filter((e) => e.clientId === state.overviewClientId);
+}
+
+function getEntriesForYear(year) {
+  const prefix = `${year}-`;
+  const base = state.entries.filter((e) => e.date.startsWith(prefix));
   if (!state.overviewClientId) return base;
   return base.filter((e) => e.clientId === state.overviewClientId);
 }
@@ -932,6 +1230,7 @@ async function refreshFromApi() {
   state.settings = data.settings;
   state.entries = data.entries;
   state.clients = data.clients;
+  state.favorites = data.favorites || [];
   renderAll();
 }
 
@@ -1027,6 +1326,21 @@ function jumpToToday() {
 
 function hasEntries(dateKey) {
   return state.entries.some((e) => e.date === dateKey);
+}
+
+function getDateDots(dateKey) {
+  const entries = state.entries.filter((e) => e.date === dateKey);
+  if (entries.length === 0) return [];
+  return entries.map((e) => {
+    const client = state.clients.find((c) => c.id === e.clientId);
+    return client?.color || "#17b26a";
+  });
+}
+
+function getRateForEntry(entry) {
+  const client = state.clients.find((c) => c.id === entry.clientId);
+  if (client && client.hourlyRate) return Number(client.hourlyRate);
+  return Number(state.settings.hourlyRate);
 }
 
 function formatDateKey(input) {

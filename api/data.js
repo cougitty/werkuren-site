@@ -21,6 +21,12 @@ export default async function handler(req, res) {
     .order("date", { ascending: false });
   if (entriesError) return sendJson(res, 500, { error: entriesError.message });
 
+  const { data: favorites, error: favoritesError } = await client
+    .from("favorites")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (favoritesError) return sendJson(res, 500, { error: favoritesError.message });
+
   return sendJson(res, 200, {
     settings: {
       hourlyRate: Number(settings.hourly_rate),
@@ -30,6 +36,17 @@ export default async function handler(req, res) {
       id: c.id,
       companyName: c.company_name,
       address: c.address || "",
+      color: c.color || "#2f66f2",
+      hourlyRate: c.hourly_rate ? Number(c.hourly_rate) : null,
+    })),
+    favorites: favorites.map((f) => ({
+      id: f.id,
+      label: f.label,
+      startTime: f.start_time,
+      endTime: f.end_time,
+      breakMinutes: f.break_minutes,
+      notes: f.notes || "",
+      clientId: f.client_id || "",
     })),
     entries: entries.map((e) => ({
       id: e.id,
