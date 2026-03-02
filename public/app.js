@@ -696,9 +696,15 @@ async function saveFavorite() {
       await apiRequest("/favorites", { method: "POST", body: payload });
     }
     toggleModal(els.favoriteModal, false);
-    await refreshFromApi();
-  } catch {
-    alert("Opslaan mislukt.");
+    try {
+      await refreshFromApi();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Onbekende fout";
+      alert(`Opgeslagen, maar sync mislukt: ${msg}`);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Onbekende fout";
+    alert(`Opslaan mislukt: ${msg}`);
   }
 }
 
@@ -799,9 +805,15 @@ async function saveEntry() {
       }
       state.selectedDate = date;
       toggleModal(els.entryModal, false);
-      await refreshFromApi();
-    } catch {
-      alert("Opslaan mislukt.");
+      try {
+        await refreshFromApi();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Onbekende fout";
+        alert(`Opgeslagen, maar sync mislukt: ${msg}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Onbekende fout";
+      alert(`Opslaan mislukt: ${msg}`);
     }
     return;
   }
@@ -871,9 +883,15 @@ async function saveSettings() {
         method: "PUT",
         body: { hourlyRate: rate, currency: els.currencyInput.value || "€" },
       });
-      await refreshFromApi();
-    } catch {
-      alert("Opslaan mislukt.");
+      try {
+        await refreshFromApi();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Onbekende fout";
+        alert(`Opgeslagen, maar sync mislukt: ${msg}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Onbekende fout";
+      alert(`Opslaan mislukt: ${msg}`);
     }
     return;
   }
@@ -913,9 +931,15 @@ async function saveClient() {
       els.clientAddress.value = "";
       els.clientRate.value = "";
       toggleModal(els.clientModal, false);
-      await refreshFromApi();
-    } catch {
-      alert("Opslaan mislukt.");
+      try {
+        await refreshFromApi();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Onbekende fout";
+        alert(`Opgeslagen, maar sync mislukt: ${msg}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Onbekende fout";
+      alert(`Opslaan mislukt: ${msg}`);
     }
     return;
   }
