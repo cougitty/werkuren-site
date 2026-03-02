@@ -268,7 +268,10 @@
 
     <div class="modal hidden" id="clientModal" aria-hidden="true">
       <div class="modal-card">
-        <h2>Klant toevoegen</h2>
+        <div class="row-between">
+          <h2>Klant toevoegen</h2>
+          <button class="ghost" id="closeClientModal">Terug</button>
+        </div>
         <label>Bedrijfsnaam</label>
         <input id="clientName" type="text" placeholder="Bedrijfsnaam" />
         <label>Adres (optioneel)</label>
@@ -283,7 +286,10 @@
 
     <div class="modal hidden" id="favoriteModal" aria-hidden="true">
       <div class="modal-card">
-        <h2>Favoriet toevoegen</h2>
+        <div class="row-between">
+          <h2>Favoriet toevoegen</h2>
+          <button class="ghost" id="closeFavoriteModal">Terug</button>
+        </div>
         <label>Naam</label>
         <input id="favoriteLabel" type="text" placeholder="Bijv. Kantoordag" />
         <label>Klant</label>

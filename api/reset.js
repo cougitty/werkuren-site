@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJson(req);
-    const username = String(body.username || "").trim();
+    const username = String(body.username || "").trim().toLowerCase();
     const newPassword = String(body.newPassword || "");
     const resetCode = String(body.resetCode || "");
 

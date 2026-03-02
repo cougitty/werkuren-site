@@ -123,12 +123,14 @@ const els = {
   exportSummary: document.getElementById("exportSummary"),
   exportSelectedBtn: document.getElementById("exportSelectedBtn"),
   clientModal: document.getElementById("clientModal"),
+  closeClientModal: document.getElementById("closeClientModal"),
   saveClientBtn: document.getElementById("saveClientBtn"),
   clientName: document.getElementById("clientName"),
   clientAddress: document.getElementById("clientAddress"),
   clientColor: document.getElementById("clientColor"),
   clientRate: document.getElementById("clientRate"),
   favoriteModal: document.getElementById("favoriteModal"),
+  closeFavoriteModal: document.getElementById("closeFavoriteModal"),
   favoriteLabel: document.getElementById("favoriteLabel"),
   favoriteClient: document.getElementById("favoriteClient"),
   favoriteStart: document.getElementById("favoriteStart"),
@@ -245,8 +247,14 @@ function attachEvents() {
   els.saveClientBtn.addEventListener("click", () => {
     void saveClient();
   });
+  if (els.closeClientModal) {
+    els.closeClientModal.addEventListener("click", () => toggleModal(els.clientModal, false));
+  }
   if (els.addFavoriteBtnSettings) {
     els.addFavoriteBtnSettings.addEventListener("click", () => openFavoriteModal());
+  }
+  if (els.closeFavoriteModal) {
+    els.closeFavoriteModal.addEventListener("click", () => toggleModal(els.favoriteModal, false));
   }
 
   els.todayBtn.addEventListener("click", jumpToToday);
@@ -402,6 +410,8 @@ function renderEntries() {
     card.className = "entry-card";
     card.addEventListener("click", () => openEntryModal(entry.id));
 
+    const client = state.clients.find((c) => c.id === entry.clientId);
+
     const bar = document.createElement("div");
     bar.className = "bar";
     if (client?.color) {
@@ -411,11 +421,10 @@ function renderEntries() {
     const body = document.createElement("div");
     body.className = "entry-body";
 
-    const client = state.clients.find((c) => c.id === entry.clientId);
     const title = document.createElement("div");
     title.className = "entry-title";
     const titleText = document.createElement("span");
-    titleText.textContent = client ? "Registratie" : "Registratie";
+    titleText.textContent = "Registratie";
     title.appendChild(titleText);
     if (client) {
       const chip = document.createElement("span");
